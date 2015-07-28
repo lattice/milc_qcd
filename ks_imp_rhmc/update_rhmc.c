@@ -12,7 +12,7 @@
  at same time.
 
  Integrators:
-    LEAPFROG - traditional 
+    LEAPFROG - traditional
     OMELYAN -
        See Takaishi and de Forcrand hep-lat/0505020
       "lambda" is adjustable parameter.  At lambda=1 this is just two
@@ -63,7 +63,7 @@
    2EPS_3TO1
         Trial version using different step sizes for the two factors in the determinant.
         eg 3*eps for light/strange ratio, eps for strange^(3/4)
-        Three Omelyan steps for gauge and factor_two force, one leapfrog step for factor 
+        Three Omelyan steps for gauge and factor_two force, one leapfrog step for factor
         one force (should upgrade to Omelyan for each)
 */
 #include "ks_imp_includes.h"	/* definitions files and prototypes */
@@ -71,7 +71,34 @@
 #include "../include/su3_mat_op.h"
 #endif
 
+#define USE_NVTX
+
+#ifdef USE_NVTX
+#include "nvToolsExt.h"
+
+const uint32_t milc_colors[] = { 0x00000000, 0x000000ff, 0x00ffff00, 0x00ff00ff, 0x0000ffff, 0x00ff0000, 0x00ffffff };
+const int milc_num_colors = sizeof(milc_colors)/sizeof(uint32_t);
+
+#define PUSH_RANGE(name,cid) { \
+	int color_id = cid; \
+	color_id = color_id%milc_num_colors;\
+	nvtxEventAttributes_t eventAttrib = {0}; \
+	eventAttrib.version = NVTX_VERSION; \
+	eventAttrib.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE; \
+	eventAttrib.colorType = NVTX_COLOR_ARGB; \
+	eventAttrib.color = milc_colors[color_id]; \
+	eventAttrib.messageType = NVTX_MESSAGE_TYPE_ASCII; \
+	eventAttrib.message.ascii = name; \
+	nvtxRangePushEx(&eventAttrib); \
+}
+#define POP_RANGE nvtxRangePop();
+#else
+#define PUSH_RANGE(name,cid)
+#define POP_RANGE
+#endif
+
 int update()  {
+  PUSH_RANGE("MILC::update",0)
   int step, iters=0;
   double startaction,endaction;
 #ifdef MILC_GLOBAL_DEBUG
@@ -146,7 +173,7 @@ int update()  {
       terminate(1);
     break;
   }
-  
+
   /* allocate space for multimass solution vectors */
 
   multi_x = (su3_vector **)malloc(n_multi_x*sizeof(su3_vector *));
@@ -164,13 +191,16 @@ int update()  {
 
   sumvec = (su3_vector *)malloc( sizeof(su3_vector)*sites_on_node );
   if( sumvec==NULL ){
-    printf("update: No room for sumvec\n"); 
+    printf("update: No room for sumvec\n");
       terminate(1);
   }
-  
+
   /* refresh the momenta */
+PUSH_RANGE("MILC::ranmom",0)
   ranmom();
-  
+POP_RANGE
+
+PUSH_RANGE("MILC::pseudofermion",0)
   /* generate a pseudofermion configuration only at start*/
   // NOTE used to clear xxx here.  May want to clear all solutions for reversibility
   iphi=0;
@@ -185,19 +215,22 @@ int update()  {
       fn = get_fm_links(fn_links);
       grsource_imp_rhmc( F_OFFSET(phi[iphi]), &(rparam[iphi].GR), EVEN,
 			 multi_x, sumvec, rsqmin_gr[iphi], niter_gr[iphi],
-			 prec_gr[iphi], fn[inaik], inaik, 
+			 prec_gr[iphi], fn[inaik], inaik,
 			 rparam[iphi].naik_term_epsilon);
       iphi++;
     }
   }
-  
+POP_RANGE
+
+PUSH_RANGE("MILC::find_Action",0)
   /* find action */
   startaction=d_action_rhmc(multi_x,sumvec);
 #ifdef HMC
   /* copy link field to old_link */
   gauge_field_copy( F_OFFSET(link[0]), F_OFFSET(old_link[0]));
 #endif
-  
+POP_RANGE
+
   switch(int_alg){
     case INT_LEAPFROG:
       /* do "steps" microcanonical steps"  */
@@ -261,17 +294,37 @@ int update()  {
             node0_printf( "Current time step: %d\n", global_current_time_step );
 #endif /* MILC_GLOBAL_DEBUG */
 	    /* update U's and H's - see header comment */
+          PUSH_RANGE("MILC::update_u",0)
      	    update_u( epsilon*( (1.0/6.0-alpha/3.0) ) );
+          POP_RANGE
+      PUSH_RANGE("MILC::update_h_gauge",0)
 	    update_h_gauge( epsilon/3.0);
+      POP_RANGE
+      PUSH_RANGE("MILC::update_u",0)
      	    update_u( epsilon*( (0.5-beta)-(1.0/6.0-alpha/3.0) ) );
+          POP_RANGE
+          PUSH_RANGE("MILC::update_h_fermion",0)
 	    iters += update_h_fermion( epsilon, multi_x);
+          POP_RANGE
+      PUSH_RANGE("MILC::update_u",0)
      	    update_u( epsilon*( (3.0/6.0+alpha/3.0)-(0.5-beta) ) );
+          POP_RANGE
+          PUSH_RANGE("MILC::update_h_gauge",0)
 	    update_h_gauge( epsilon/3.0);
+      POP_RANGE
 
+PUSH_RANGE("MILC::update_u",0)
      	    update_u( epsilon*( (5.0/6.0-alpha/3.0)-(3.0/6.0+alpha/3.0) ) );
+          POP_RANGE
+          PUSH_RANGE("MILC::update_h_gauge",0)
 	    update_h_gauge( epsilon/3.0);
+      POP_RANGE
+      PUSH_RANGE("MILC::update_u",0)
      	    update_u( epsilon*( (7.0/6.0+alpha/3.0)-(5.0/6.0-alpha/3.0) ) );
+          POP_RANGE
+          PUSH_RANGE("MILC::update_h_gauge",0)
 	    update_h_gauge( epsilon/3.0);
+      POP_RANGE
 
 #ifdef MILC_GLOBAL_DEBUG
 #ifdef HISQ_REUNITARIZATION_DEBUG
@@ -349,18 +402,33 @@ int update()  {
             global_current_time_step = step;
             node0_printf( "Current time step: %d\n", global_current_time_step );
 #endif /* MILC_GLOBAL_DEBUG */
-
+      PUSH_RANGE("MILC::update_u",0)
      	    update_u( epsilon*( (9.0/6.0-alpha/3.0)-(7.0/6.0+alpha/3.0) ) );
-	    update_h_gauge( epsilon/3.0);
-     	    update_u( epsilon*( (1.5+beta)-(9.0/6.0-alpha/3.0) ) );
-	    iters += update_h_fermion( epsilon, multi_x);
-     	    update_u( epsilon*( (11.0/6.0+alpha/3.0)-(1.5+beta) ) );
-	    update_h_gauge( epsilon/3.0);
-     	    update_u( epsilon*( (2.0)-(11.0/6.0+alpha/3.0) ) );
+          POP_RANGE
+	        PUSH_RANGE("MILC::update_h_gauge",0)
+      update_h_gauge( epsilon/3.0);
+      POP_RANGE
+     	          PUSH_RANGE("MILC::update_u",0)
+          update_u( epsilon*( (1.5+beta)-(9.0/6.0-alpha/3.0) ) );
+          POP_RANGE
+	          PUSH_RANGE("MILC::update_h_fermion",0)
+      iters += update_h_fermion( epsilon, multi_x);
+      POP_RANGE
+     	          PUSH_RANGE("MILC::update_u",0)
+          update_u( epsilon*( (11.0/6.0+alpha/3.0)-(1.5+beta) ) );
+          POP_RANGE
+	          PUSH_RANGE("MILC::update_u",0)
+      update_h_gauge( epsilon/3.0);
+      POP_RANGE
+     	          PUSH_RANGE("MILC::update_u",0)
+          update_u( epsilon*( (2.0)-(11.0/6.0+alpha/3.0) ) );
+          POP_RANGE
 
             /* reunitarize the gauge field */
 	    rephase( OFF );
+            PUSH_RANGE("MILC::update_u",0)
             reunitarize();
+            POP_RANGE
 	    rephase( ON );
 #ifdef MILC_GLOBAL_DEBUG
 #ifdef HISQ_REUNITARIZATION_DEBUG
@@ -452,12 +520,12 @@ int update()  {
      	    update_u(0.5*epsilon*lambda);
 	    rephase(OFF); imp_gauge_force(epsilon,F_OFFSET(mom)); rephase(ON);
             eo_fermion_force_rhmc( epsilon,  &rparam[1].MD,
-				   multi_x, F_OFFSET(phi[1]), rsqmin_md[1], 
+				   multi_x, F_OFFSET(phi[1]), rsqmin_md[1],
 				   niter_md[1], prec_md[1], prec_ff,
 				   fn_links );
      	    update_u(epsilon*( 1.0 + 0.5*(1-lambda) )); // to time = (3/2)*epsilon
             eo_fermion_force_rhmc( 3.0*epsilon,  &rparam[0].MD,
-				   multi_x, F_OFFSET(phi[0]), rsqmin_md[0], 
+				   multi_x, F_OFFSET(phi[0]), rsqmin_md[0],
 				   niter_md[0], prec_md[0], prec_ff,
 				   fn_links );
 
@@ -465,7 +533,7 @@ int update()  {
 
 	    rephase(OFF); imp_gauge_force(epsilon,F_OFFSET(mom)); rephase(ON);
             eo_fermion_force_rhmc( epsilon,  &rparam[1].MD,
-				   multi_x, F_OFFSET(phi[1]), rsqmin_md[1], 
+				   multi_x, F_OFFSET(phi[1]), rsqmin_md[1],
 				   niter_md[1], prec_md[1], prec_ff,
 				   fn_links );
 
@@ -476,7 +544,7 @@ int update()  {
 
 	    rephase(OFF); imp_gauge_force(epsilon,F_OFFSET(mom)); rephase(ON);
             eo_fermion_force_rhmc( epsilon,  &rparam[1].MD,
-				   multi_x, F_OFFSET(phi[1]), rsqmin_md[1], 
+				   multi_x, F_OFFSET(phi[1]), rsqmin_md[1],
 				   niter_md[1], prec_md[1], prec_ff,
 				   fn_links );
 
@@ -484,7 +552,7 @@ int update()  {
 
 	    rephase(OFF); imp_gauge_force(epsilon,F_OFFSET(mom)); rephase(ON);
             eo_fermion_force_rhmc( epsilon,  &rparam[1].MD,
-				   multi_x, F_OFFSET(phi[1]), rsqmin_md[1], 
+				   multi_x, F_OFFSET(phi[1]), rsqmin_md[1],
 				   niter_md[1], prec_md[1], prec_ff,
 				   fn_links );
 
@@ -495,14 +563,14 @@ int update()  {
 
 	    rephase(OFF); imp_gauge_force(epsilon,F_OFFSET(mom)); rephase(ON);
             eo_fermion_force_rhmc( epsilon,  &rparam[1].MD,
-				   multi_x, F_OFFSET(phi[1]), rsqmin_md[1], 
+				   multi_x, F_OFFSET(phi[1]), rsqmin_md[1],
 				   niter_md[1], prec_md[1], prec_ff,
 				   fn_links );
 
      	    update_u(epsilon*(  0.5*(1.0-lambda) )); // to time 2*epsilon + epsilon/2
 
             eo_fermion_force_rhmc( 3.0*epsilon,  &rparam[0].MD,
-				   multi_x, F_OFFSET(phi[0]), rsqmin_md[0], 
+				   multi_x, F_OFFSET(phi[0]), rsqmin_md[0],
 				   niter_md[0], prec_md[0], prec_ff,
 				   fn_links );
 
@@ -510,7 +578,7 @@ int update()  {
 
 	    rephase(OFF); imp_gauge_force(epsilon,F_OFFSET(mom)); rephase(ON);
             eo_fermion_force_rhmc( epsilon,  &rparam[1].MD,
-				   multi_x, F_OFFSET(phi[1]), rsqmin_md[1], 
+				   multi_x, F_OFFSET(phi[1]), rsqmin_md[1],
 				   niter_md[1], prec_md[1], prec_ff,
 				   fn_links );
 
@@ -530,7 +598,9 @@ int update()  {
 
   /* find action */
   /* do conjugate gradient to get (Madj M)inverse * phi */
+        PUSH_RANGE("MILC::find_Action",0)
   endaction=d_action_rhmc(multi_x,sumvec);
+  POP_RANGE
   /* decide whether to accept, if not, copy old link field back */
   /* careful - must generate only one random number for whole lattice */
 #ifdef HMC
@@ -550,11 +620,11 @@ int update()  {
 #else  // not HMC
   node0_printf("CHECK: delta S = %e\n", (double)(endaction-startaction));
 #endif // HMC
-  
+
   /* free multimass solution vector storage */
   for(i=0;i<n_multi_x;i++)free(multi_x[i]);
   free(sumvec);
-  
+    POP_RANGE
   if(steps > 0)return (iters/steps);
   else return(-99);
 }
