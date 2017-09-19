@@ -581,6 +581,9 @@ INLINEOPT = -DC_GLOBAL_INLINE # -DSSE_GLOBAL_INLINE #-DC_INLINE
 
 CTIME = # -DCGTIME -DFFTIME -DFLTIME -DGFTIME -DREMAP -DPRTIME -DIOTIME
 
+# Add NERSC timers
+CTIME += #-DNERSC_TIME
+
 #------------------------------
 # Profiling
 # Applications:  QDP

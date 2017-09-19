@@ -24,6 +24,13 @@
 /* For information */
 #define NULL_FP -1
 
+#if defined (NERSC_TIME)
+#include <sys/time.h>
+#include <sys/resource.h>
+struct rusage usage;
+double t_total, t_ks_ratinv, t_eo_fermion, t_restore_fermion; /* timing for update_h_fermion() */
+#endif
+
 EXTERN gauge_header start_lat_hdr;	/* Input gauge field header */
 
 int
@@ -59,6 +66,11 @@ main( int argc, char **argv )
     global_current_time_step = 0;
 #endif /* MILC_GLOBAL_DEBUG */
     
+#if defined (NERSC_TIME)
+    t_ks_ratinv = t_eo_fermion = t_restore_fermion = 0.0;
+    t_total = -dclock();
+#endif
+
     for( traj_done=0; traj_done < warms; traj_done++ ){
       update();
     }
@@ -144,23 +156,33 @@ main( int argc, char **argv )
     }
     
     endtime = dclock();
-    if(this_node==0){
-      printf("Time = %e seconds\n",(double)(endtime-starttime));
-      printf("total_iters = %d\n",total_iters);
+
+    node0_printf("total_iters = %d\n",total_iters);
+#ifdef NERSC_TIME
+    node0_printf("TOTAL_TIME %.3f secs\n", (double)(endtime-starttime));
+    node0_printf("CG_TIME    %.3f secs\n", t_ks_ratinv);
+    node0_printf("FORCE_TIME %.3f secs\n", t_eo_fermion);
+    node0_printf("LINK_TIME  %.3f secs\n", t_restore_fermion);
+    if (getrusage(RUSAGE_SELF, &usage) == 0) {
+      node0_printf("Approximate memory usage = %.3f MB\n", (float)usage.ru_maxrss*numnodes()/1024.0);
+    }
+#else
+    node0_printf("Time = %e seconds\n",(double)(endtime-starttime));
+#endif
+
 #ifdef HISQ_SVD_COUNTER
-      printf("hisq_svd_counter = %d\n",hisq_svd_counter);
+    node0_printf("hisq_svd_counter = %d\n",hisq_svd_counter);
 #endif
 #ifdef HYPISQ_SVD_COUNTER
-      printf("hypisq_svd_counter = %d\n",hypisq_svd_counter);
+    node0_printf("hypisq_svd_counter = %d\n",hypisq_svd_counter);
 #endif
       
 #ifdef HISQ_FORCE_FILTER_COUNTER
-      printf("hisq_force_filter_counter = %d\n",hisq_force_filter_counter);
+    node0_printf("hisq_force_filter_counter = %d\n",hisq_force_filter_counter);
 #endif
 #ifdef HYPISQ_FORCE_FILTER_COUNTER
-      printf("hypisq_force_filter_counter = %d\n",hypisq_force_filter_counter);
+    node0_printf("hypisq_force_filter_counter = %d\n",hypisq_force_filter_counter);
 #endif
-    }
     fflush(stdout);
     starttime = endtime;
     

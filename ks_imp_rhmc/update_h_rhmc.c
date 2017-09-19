@@ -49,6 +49,12 @@ int update_h_fermion( Real eps, su3_vector **multi_x ){
   int iters = 0;
   imp_ferm_links_t **fn;
 
+#if defined(NERSC_TIME)
+  extern struct rusage usage;
+  extern double t_total, t_ks_ratinv, t_eo_fermion, t_restore_fermion;
+  double t_tmp;
+#endif
+
   /* Algorithm sketch: assemble multi_x with all |X> fields,
      then call force routine for each part (so far we have to parts:
      zero correction to Naik and non-zero correction to Naik */
@@ -66,7 +72,13 @@ int update_h_fermion( Real eps, su3_vector **multi_x ){
 #endif
   for( i=0; i<n; i++ ) {
     for( jphi=0; jphi<n_pseudo_naik[i]; jphi++ ) {
+#ifdef NERSC_TIME
+      t_tmp = -dclock();
+#endif
       restore_fermion_links_from_site(fn_links, prec_md[iphi]);
+#ifdef NERSC_TIME
+      t_restore_fermion += t_tmp + dclock();
+#endif
       fn = get_fm_links(fn_links);
 
       // Add the current pseudofermion to the current set
@@ -77,11 +89,17 @@ int update_h_fermion( Real eps, su3_vector **multi_x ){
       // Compute ( M^\dagger M)^{-1} in xxx_even
       // Then compute M*xxx in temporary vector xxx_odd 
       /* See long comment at end of file */
-	/* The diagonal term in M doesn't matter */
-      iters += ks_ratinv( F_OFFSET(phi[iphi]), multi_x+tmporder, roots, order, 
-			  niter_md[iphi], rsqmin_md[iphi], prec_md[iphi], EVEN, 
-			  &final_rsq, fn[i], 
+      /* The diagonal term in M doesn't matter */
+#ifdef NERSC_TIME
+      t_tmp = -dclock();
+#endif
+      iters += ks_ratinv( F_OFFSET(phi[iphi]), multi_x+tmporder, roots, order,
+			  niter_md[iphi], rsqmin_md[iphi], prec_md[iphi], EVEN,
+			  &final_rsq, fn[i],
 			  i, rparam[iphi].naik_term_epsilon );
+#ifdef NERSC_TIME
+      t_ks_ratinv += t_tmp + dclock();
+#endif
 
       for(j=0;j<order;j++){
 	dslash_field( multi_x[tmporder+j], multi_x[tmporder+j],  ODD,
@@ -106,9 +124,20 @@ int update_h_fermion( Real eps, su3_vector **multi_x ){
   fflush(stdout);
 #endif /* MILC_GLOBAL_DEBUG */
 
+#ifdef NERSC_TIME
+  t_tmp = -dclock();
+#endif
   restore_fermion_links_from_site(fn_links, prec_ff);
+#ifdef NERSC_TIME
+  t_restore_fermion += t_tmp + dclock();
+  t_tmp = -dclock();
+#endif
   eo_fermion_force_multi( eps, allresidues, multi_x,
 			  n_order_naik_total, prec_ff, fn_links );
+#ifdef NERSC_TIME
+  t_eo_fermion += t_tmp + dclock();
+  node0_printf("step iters=%d: t_cg=%e, t_force=%e, t_link=%e\n", iters, t_ks_ratinv, t_eo_fermion, t_restore_fermion);
+#endif
 
   free(allresidues);
   return iters;
