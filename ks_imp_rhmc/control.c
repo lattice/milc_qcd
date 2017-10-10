@@ -205,6 +205,8 @@ main( int argc, char **argv )
     fn_links = NULL;
   }
 
+  free_lattice();
+
 #ifdef HAVE_QUDA
   qudaFinalize();
 #endif
