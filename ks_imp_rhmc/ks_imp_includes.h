@@ -44,7 +44,7 @@
 /* prototypes for functions in this directory */
 
 /* eo_fermion_force_rhmc.c */
-void eo_fermion_force_rhmc( Real eps, params_ratfunc *rf, 
+void eo_fermion_force_rhmc( Real eps, params_ratfunc *rf,
 			    su3_vector **multi_x, field_offset phi_off,
 			    Real my_rsqmin, int niter, int cg_prec,
 			    int ff_prec, fermion_links_t *fl );
@@ -55,8 +55,9 @@ int readin(int prompt);
 
 /* update_rhmc.c */
 
-enum int_alg_t { INT_LEAPFROG, INT_OMELYAN, INT_2EPS_3TO1, INT_2EPS_2TO1, 
-                 INT_2G1F, INT_3G1F, INT_5G1F, INT_6G1F, INT_4MN4FP, INT_4MN5FV, INT_FOURSTEP, 
+enum int_alg_t { INT_LEAPFROG, INT_OMELYAN, INT_2EPS_3TO1, INT_2EPS_2TO1,
+                 INT_2G1F, INT_3G1F, INT_5G1F, INT_6G1F,
+                 INT_PQPQP_2G1F, INT_QPQPQ_2G1F, INT_4MN4FP, INT_4MN5FV, INT_FOURSTEP, 
 		 INT_PLAY };
 
 /* Set default integration algorithm */
@@ -120,4 +121,3 @@ double fermion_action( su3_vector **multi_x, su3_vector *sumvec );
 double hmom_action(void);
 
 #endif /* KS_IMP_INCLUDES_H_ */
-
