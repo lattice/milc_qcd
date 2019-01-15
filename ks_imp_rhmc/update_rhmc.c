@@ -4,7 +4,7 @@
 /*  D.T. first try at RHMC version 12/05
  *  D.T. 03/07 Added 2G1F and generalized to gang together multiple psfermions
 
-/*  A.W-L. 12/18 Added 5G1F and 6G1F
+    A.W-L. 12/18 Added 5G1F and 6G1F
 
  Update lattice by a molecular dynamics trajectory.
  Contains a selection of integration algorithms
@@ -151,7 +151,7 @@ void update_u_inner_qpqpq( Real tau, int steps, Real alpha) {
 
     Real dtau = tau / steps;
     /* do "steps" microcanonical steps (one "step" = one force evaluation)"  */
-    for(step=1; step <= steps; step++){
+    for(int step=1; step <= steps; step++){
         /* update U's and H's - see header comment */
         update_u( alpha*dtau );
         update_h_gauge( 0.5*dtau );
@@ -165,7 +165,7 @@ void update_u_inner_pqpqp( Real tau, int steps, Real alpha) {
 
     Real dtau = tau / steps;
     /* do "steps" microcanonical steps (one "step" = one force evaluation)"  */
-    for(step=1; step <= steps; step++){
+    for(int step=1; step <= steps; step++){
         /* update U's and H's - see header comment */
         if(step == 1) update_h_gauge( alpha*dtau );
         update_u( 0.5*dtau );
@@ -195,6 +195,8 @@ int update()  {
   su3_vector *sumvec;
   int iphi, int_alg, inaik, jphi, n;
   Real lambda, alpha, beta; // parameters in integration algorithms
+  Real inner_lambda; // param for inner integrator
+  int  inner_steps; //  inner steps for multi-level integrator
   imp_ferm_links_t** fn;
 
   int_alg = INT_ALG;
@@ -216,8 +218,10 @@ int update()  {
         for(j=0,i=0; i<n_pseudo; i++){j+=rparam[i].MD.order;}
         if(j>n_multi_x)n_multi_x=j; // Fermion force needs all multi_x at once in this algorithm
     break;
-    case INT_QPQPQ_2G1F;
+    case INT_QPQPQ_2G1F:
         lambda = 0.2;
+        inner_lambda = 0.2;
+        inner_steps = 2;
         node0_printf("QPQPQ 2G1F integration, steps= %d eps= %e lambda= %e\n",steps,epsilon,lambda);
         if (steps %2 != 0 ){
             node0_printf("BONEHEAD! need even number of steps\n");
@@ -227,8 +231,10 @@ int update()  {
         for(j=0,i=0; i<n_pseudo; i++){j+=rparam[i].MD.order;}
         if(j>n_multi_x) n_multi_x=j; // Fermion force needs all multi_x at once in this algorithm
     break;
-    case INT_PQPQP_2G1F;
+    case INT_PQPQP_2G1F:
         lambda = 0.2;
+        inner_lambda = 0.2;
+        inner_steps = 2;
         node0_printf("PQPQP 2G1F integration, steps= %d eps= %e lambda= %e\n",steps,epsilon,lambda);
         if (steps %2 != 0 ){
             node0_printf("BONEHEAD! need even number of steps\n");
@@ -380,12 +386,11 @@ int update()  {
         /*TEMP - monitor action*/ //if(step%4==0)d_action_rhmc(multi_x,sumvec);
       }	/* end loop over microcanonical steps */
     break;
-    case INT_QPQPQ_2G1F:
+    case INT_QPQPQ_2G1F: ;
         /* do "steps" microcanonical steps (one "step" = one force evaluation)"  */
-        int inner_steps = 2;// number of gauge steps per ferm step
+        // inner_steps number of gauge steps per ferm step
         // inner_lambda = alpha param for QPQPQ INT
-        //Real inner_lambda = 0.2113248654;// 6*lam**2 - 6*l + 1 == 0
-        Real inner_lambda = 0.2;//match MILCs choice of alpha=0.2
+        //              = 0.2113248654;// 6*lam**2 - 6*l + 1 == 0 to eliminate {T,{S,T}} in QPQPQ
 
         for(step=2; step <= steps; step+=2){
             /* update U's and H's - see header comment */
@@ -398,34 +403,33 @@ int update()  {
             rephase( OFF ); reunitarize(); rephase( ON );
         }	/* end loop over microcanonical steps */
     break;
-    case INT_PQPQP_2G1F:
-    /* do "steps" microcanonical steps (one "step" = one force evaluation)"  */
-    int inner_steps = 2;// number of gauge steps per ferm step
-    // inner_lambda = alpha param for QPQPQ INT
-    //Real inner_lambda = 0.1666666667;// 6*lam - 1 == 0
-    Real inner_lambda = 0.2;// Match MILC
+    case INT_PQPQP_2G1F: ;
+        /* do "steps" microcanonical steps (one "step" = one force evaluation)"  */
+        // int inner_steps -  number of gauge steps per ferm step
+        // inner_lambda = alpha param for QPQPQ INT
+        //              = 0.1666666667;// 6*lam - 1 == 0 to eliminate {T,{S,T}} in PQPQP
 
-    for(step=2; step <= steps; step+=2){
-        /* update U's and H's - see header comment */
-        /* NOTE since we are chaining these together with a ferm
-        as the first and last step, and update_h_ferm only updates
-        the momentum, we can double the length of the last step and
-        skip the first, except the first and last step */
-        if(step == 2){
-            iters += update_h_fermion( 0.5*epsilon*lambda, multi_x);
-        }
-        update_u_inner_pqpqp(epsilon, inner_steps, inner_lambda);
-        iters += update_h_fermion(epsilon*(2.0-lambda), multi_x);
-        update_u_inner_pqpqp(epsilon, inner_steps, inner_lambda);
-        if(step == steps){
-            iters += update_h_fermion( 0.5*epsilon*lambda, multi_x);
-        }
-        else{
-            iters += update_h_fermion( epsilon*lambda, multi_x);
-        }
-        /* reunitarize the gauge field */
-        rephase( OFF ); reunitarize(); rephase( ON );
-    }	/* end loop over microcanonical steps */
+        for(step=2; step <= steps; step+=2){
+            /* update U's and H's - see header comment */
+            /* NOTE since we are chaining these together with a ferm
+            as the first and last step, and update_h_ferm only updates
+            the momentum, we can double the length of the last step and
+            skip the first, except the first and last step */
+            if(step == 2){
+                iters += update_h_fermion( 0.5*epsilon*lambda, multi_x);
+            }
+            update_u_inner_pqpqp(epsilon, inner_steps, inner_lambda);
+            iters += update_h_fermion(epsilon*(2.0-lambda), multi_x);
+            update_u_inner_pqpqp(epsilon, inner_steps, inner_lambda);
+            if(step == steps){
+                iters += update_h_fermion( 0.5*epsilon*lambda, multi_x);
+            }
+            else{
+                iters += update_h_fermion( epsilon*lambda, multi_x);
+            }
+            /* reunitarize the gauge field */
+            rephase( OFF ); reunitarize(); rephase( ON );
+        }	/* end loop over microcanonical steps */
     break;
     case INT_2G1F:
         /* do "steps" microcanonical steps (one "step" = one force evaluation)"  */
