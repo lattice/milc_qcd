@@ -181,6 +181,51 @@ void update_u_inner_pqpqp( Real tau, int steps, Real lambda) {
     }
 }
 
+void update_u_inner_pqpqp_FGI( Real tau, int steps, Real lambda) {
+
+    Real dtau = tau / steps;
+    /* do "steps" microcanonical steps (one "step" = one force evaluation)"  */
+    for(int step=1; step <= steps; step++){
+	if(step == 1){//only do first step the first itteration through loop
+	    update_h_gauge( dtau *lambda );
+	}
+	update_u          ( dtau *0.5 );
+	update_h_gauge    ( dtau *(1-2.*lambda) );
+	//Copy the current gauge field into a temporary field.
+	su3_matrix *linkcopyXUP, *linkcopyYUP, *linkcopyZUP, *linkcopyTUP;
+	linkcopyXUP = malloc(sizeof(su3_matrix)*sites_on_node);
+	linkcopyYUP = malloc(sizeof(su3_matrix)*sites_on_node);
+	linkcopyZUP = malloc(sizeof(su3_matrix)*sites_on_node);
+	linkcopyTUP = malloc(sizeof(su3_matrix)*sites_on_node);
+	//This is where the action comes from.
+	register int i;
+	register site *s;
+	FORALLSITES(i,s){
+	  su3mat_copy(&(s->link[XUP]),linkcopyXUP+i);
+	  su3mat_copy(&(s->link[YUP]),linkcopyYUP+i);
+	  su3mat_copy(&(s->link[ZUP]),linkcopyZUP+i);
+	  su3mat_copy(&(s->link[TUP]),linkcopyTUP+i);
+	}
+	//Update the U-field temporarily.
+	update_u          (-dtau*dtau*0.4166666);
+	update_h_gauge    ( .167 );
+	//Restore original U-field back.
+	FORALLSITES(i,s){
+	  su3mat_copy(linkcopyXUP+i,&(s->link[XUP]));
+	  su3mat_copy(linkcopyYUP+i,&(s->link[YUP]));
+	  su3mat_copy(linkcopyZUP+i,&(s->link[ZUP]));
+	  su3mat_copy(linkcopyTUP+i,&(s->link[TUP]));
+	}
+	update_u          ( dtau *0.5 );
+	if(step == steps){// double the last step to make up for the first, except for the last iteration
+	  update_h_gauge  ( dtau *lambda );
+	}
+	else{
+	  update_h_gauge  ( dtau *2.0*lambda );
+	}
+    }
+}
+
 int update()  {
   int step, iters=0;
   double startaction,endaction;
@@ -238,6 +283,20 @@ int update()  {
         inner_lambda = atof(strdup(getenv("INNER_LAMBDA")));
         inner_steps  = atof(strdup(getenv("INNER_STEPS")));
         node0_printf("PQPQP %dG1F integration, outer_steps= %d eps= %e outer_lambda= %e \
+            inner_steps= %d inner_lambda= %e\n",inner_steps,steps,epsilon,outer_lambda,inner_steps,inner_lambda);
+        if (steps %2 != 0 ){
+            node0_printf("BONEHEAD! need even number of steps\n");
+            terminate(1);
+        }
+        n_multi_x = max_rat_order;
+        for(j=0,i=0; i<n_pseudo; i++){j+=rparam[i].MD.order;}
+        if(j>n_multi_x) n_multi_x=j; // Fermion force needs all multi_x at once in this algorithm
+    break;
+    case INT_PQPQP_FGI:
+        outer_lambda = atof(strdup(getenv("OUTER_LAMBDA")));
+        inner_lambda = atof(strdup(getenv("INNER_LAMBDA")));
+        inner_steps  = atof(strdup(getenv("INNER_STEPS")));
+        node0_printf("PQPQP_FGI %dG1F integration, outer_steps= %d eps= %e outer_lambda= %e \
             inner_steps= %d inner_lambda= %e\n",inner_steps,steps,epsilon,outer_lambda,inner_steps,inner_lambda);
         if (steps %2 != 0 ){
             node0_printf("BONEHEAD! need even number of steps\n");
@@ -422,6 +481,32 @@ int update()  {
             update_u_inner_pqpqp         ( epsilon, inner_steps, inner_lambda);
             iters += update_h_fermion    ( epsilon*(2.0-outer_lambda), multi_x);
             update_u_inner_pqpqp         ( epsilon, inner_steps, inner_lambda);
+            if(step == steps){
+                iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
+            }
+            else{
+                iters += update_h_fermion( epsilon*outer_lambda, multi_x);
+            }
+            /* reunitarize the gauge field */
+            rephase( OFF ); reunitarize(); rephase( ON );
+        }	/* end loop over microcanonical steps */
+    case INT_PQPQP_FGI:
+        /* do "steps" microcanonical steps (one "step" = one force evaluation)"  */
+        // inner_lambda = alpha param for QPQPQ INT
+        //              = 0.1666666667;// 6*lam - 1 == 0 to eliminate {T,{S,T}} in PQPQP
+
+        for(step=2; step <= steps; step+=2){
+            /* update U's and H's - see header comment */
+            /* NOTE since we are chaining these together with a ferm
+            as the first and last step, and update_h_ferm only updates
+            the momentum, we can double the length of the last step and
+            skip the first, except the first and last step */
+            if(step == 2){
+                iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
+            }
+            update_u_inner_pqpqp_FGI     ( epsilon, inner_steps, inner_lambda);
+            iters += update_h_fermion    ( epsilon*(2.0-outer_lambda), multi_x);
+            update_u_inner_pqpqp_FGI     ( epsilon, inner_steps, inner_lambda);
             if(step == steps){
                 iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
             }
@@ -870,6 +955,9 @@ const char *ks_int_alg_opt_chr( void )
     break;
   case INT_PQPQP:
     return "INT_PQPQP";
+    break;
+  case INT_PQPQP_FGI:
+    return "INT_PQPQP_FGI";
     break;
   case INT_QPQPQ:
     return "INT_QPQPQ";
