@@ -554,9 +554,9 @@ int update()  {
             if(step == 2){
                 iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
             }
-            update_u_inner_pqpqp_FGI     ( epsilon, inner_steps, lambda);
+            update_u_inner_pqpqp_FGI     ( epsilon, inner_steps, inner_lambda);
             iters += update_h_fermion    ( epsilon*(2.0-outer_lambda), multi_x);
-            update_u_inner_pqpqp_FGI     ( epsilon, inner_steps, lambda );
+            update_u_inner_pqpqp_FGI     ( epsilon, inner_steps, inner_lambda );
             if(step == steps){
                 iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
             }
