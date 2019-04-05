@@ -232,19 +232,18 @@ void copy_to_gauge_field(su3_matrix *linkcopyXUP,
 
 
 
-void update_u_inner_pqpqp_FGI( Real tau, int steps, Real lambda_off) {
+void update_u_inner_pqpqp_FGI( Real tau, int steps) {
 
     Real lambda         = 0.16666667;
     Real one_twentyfour = 0.04166667;
     Real dtau = tau / steps;
 
     // allocate memory for gauge field copy
-    /*su3_matrix *linkcopyXUP, *linkcopyYUP, *linkcopyZUP, *linkcopyTUP;
+    su3_matrix *linkcopyXUP, *linkcopyYUP, *linkcopyZUP, *linkcopyTUP;
     linkcopyXUP = malloc(sizeof(su3_matrix)*sites_on_node);
     linkcopyYUP = malloc(sizeof(su3_matrix)*sites_on_node);
     linkcopyZUP = malloc(sizeof(su3_matrix)*sites_on_node);
     linkcopyTUP = malloc(sizeof(su3_matrix)*sites_on_node);
-    */
 
     /* do "steps" microcanonical steps (one "step" = one force evaluation)"  */
     for(int step=1; step <= steps; step++){
@@ -254,12 +253,12 @@ void update_u_inner_pqpqp_FGI( Real tau, int steps, Real lambda_off) {
         update_u          ( dtau *0.5 );
         update_h_gauge    ( dtau *(1-2.*lambda) );
         // make a copy of the gauge field
-        //copy_from_gauge_field(linkcopyXUP, linkcopyYUP, linkcopyZUP, linkcopyTUP);
+        copy_from_gauge_field(linkcopyXUP, linkcopyYUP, linkcopyZUP, linkcopyTUP);
         //Update the U-field temporarily.
-        //update_u          (-dtau*dtau * one_twentyfour);
+        update_u          (-dtau*dtau * one_twentyfour);
         //update_h_gauge    ( lambda * dtau );
         //Restore original U-field back.
-	//copy_to_gauge_field(linkcopyXUP, linkcopyYUP, linkcopyZUP, linkcopyTUP);
+	copy_to_gauge_field(linkcopyXUP, linkcopyYUP, linkcopyZUP, linkcopyTUP);
         update_u          ( dtau *0.5 );
         if(step == steps){// double the last step to make up for the first, except for the last iteration
         update_h_gauge  ( dtau *lambda );
@@ -270,10 +269,10 @@ void update_u_inner_pqpqp_FGI( Real tau, int steps, Real lambda_off) {
     }
     // free the link_copy memory
     //free(link_copy);
-    /*free(linkcopyXUP);
+    free(linkcopyXUP);
     free(linkcopyYUP);
     free(linkcopyZUP);
-    free(linkcopyTUP);*/
+    free(linkcopyTUP);
 }
 
 int update()  {
@@ -554,9 +553,9 @@ int update()  {
             if(step == 2){
                 iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
             }
-            update_u_inner_pqpqp_FGI     ( epsilon, inner_steps, inner_lambda);
+            update_u_inner_pqpqp_FGI     ( epsilon, inner_steps);
             iters += update_h_fermion    ( epsilon*(2.0-outer_lambda), multi_x);
-            update_u_inner_pqpqp_FGI     ( epsilon, inner_steps, inner_lambda );
+            update_u_inner_pqpqp_FGI     ( epsilon, inner_steps);
             if(step == steps){
                 iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
             }
