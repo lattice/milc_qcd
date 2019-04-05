@@ -181,6 +181,24 @@ void update_u_inner_pqpqp( Real tau, int steps, Real lambda) {
     }
 }
 
+//NEW NOTES
+/*
+make lambda = 1/6
+remove memory leak
+do a test where we turn off FGI and agree with OMELEYAN with 1/6
+
+
+make copy of P field and U field
+0-out U-field
+update_h_gauge with 1.0  - defining Fj Tj
+update_u (-dtau**2 / 24)
+
+restore momentum field to global
+update_h_gauge( dtau / 6) - adds deltaP back to P
+
+restore gauge field
+*/
+
 void update_u_inner_pqpqp_FGI( Real tau, int steps, Real lambda) {
 
     Real dtau = tau / steps;
