@@ -183,8 +183,8 @@ void update_u_inner_pqpqp( Real tau, int steps, Real lambda) {
 
 //NEW NOTES
 /*
-make lambda = 1/6
-remove memory leak
+make lambda = 1/6 ASG:DONE
+remove memory leak ASG:DONE
 do a test where we turn off FGI and agree with OMELEYAN with 1/6
 
 
@@ -199,31 +199,47 @@ update_h_gauge( dtau / 6) - adds deltaP back to P
 restore gauge field
 */
 
-void copy_from_gauge_field(su3_matrix *link_copy){
-    //This is where the action comes from.
-    for(dir=XUP; dir<=TUP; dir++){
-        register int i;
-        register site *s;
-        FORALLSITES(i,s){
-            su3mat_copy(&(s->link[dir]),link_copy[dir]+i);
-        }
-    }
+void copy_from_gauge_field(su3_matrix *linkcopyXUP, 
+    su3_matrix *linkcopyYUP,
+    su3_matrix *linkcopyZUP, 
+    su3_matrix *linkcopyTUP){
+   /* copy link field to old_link */
+   //gauge_field_copy( F_OFFSET(link[0]), F_OFFSET(old_link[0]));
+  register int i;
+  register site *s;
+  FORALLSITES(i,s){
+      su3mat_copy(&(s->link[XUP]),linkcopyXUP+i);
+      su3mat_copy(&(s->link[YUP]),linkcopyYUP+i);
+      su3mat_copy(&(s->link[ZUP]),linkcopyZUP+i);
+      su3mat_copy(&(s->link[TUP]),linkcopyTUP+i);
+  
+  }
+}
 
-    /* copy link field to old_link */
-    //gauge_field_copy( F_OFFSET(link[0]), F_OFFSET(old_link[0]));
+void copy_to_gauge_field(su3_matrix *linkcopyXUP, 
+    su3_matrix *linkcopyYUP,
+    su3_matrix *linkcopyZUP, 
+    su3_matrix *linkcopyTUP){
+  register int i;
+  register site *s;
+  FORALLSITES(i,s){
+      su3mat_copy(linkcopyXUP+i, &(s->link[XUP]));
+      su3mat_copy(linkcopyYUP+i, &(s->link[YUP]));
+      su3mat_copy(linkcopyZUP+i, &(s->link[ZUP]));
+      su3mat_copy(linkcopyTUP+i, &(s->link[TUP]));
+  }
+}
 
 
-void update_u_inner_pqpqp_FGI( Real tau, int steps) {
 
-    Real lambda         = 0.166666666667
-    Real one_twentyfour = 0.041666666666
+void update_u_inner_pqpqp_FGI( Real tau, int steps, Real lambda_off) {
+
+    Real lambda         = 0.16666667;
+    Real one_twentyfour = 0.04166667;
     Real dtau = tau / steps;
 
     // allocate memory for gauge field copy
-    su3_matrix *link_copy[4];
-    link_copy = malloc(4 * sizeof(su3_matrix) * sites_on_node);
-    /*
-    su3_matrix *linkcopyXUP, *linkcopyYUP, *linkcopyZUP, *linkcopyTUP;
+    /*su3_matrix *linkcopyXUP, *linkcopyYUP, *linkcopyZUP, *linkcopyTUP;
     linkcopyXUP = malloc(sizeof(su3_matrix)*sites_on_node);
     linkcopyYUP = malloc(sizeof(su3_matrix)*sites_on_node);
     linkcopyZUP = malloc(sizeof(su3_matrix)*sites_on_node);
@@ -232,26 +248,18 @@ void update_u_inner_pqpqp_FGI( Real tau, int steps) {
 
     /* do "steps" microcanonical steps (one "step" = one force evaluation)"  */
     for(int step=1; step <= steps; step++){
-        if(step == 1){//only do first step the first itteration through loop
+        if(step == 1){//only do first step the first iteration through loop
             update_h_gauge( dtau *lambda );
         }
         update_u          ( dtau *0.5 );
         update_h_gauge    ( dtau *(1-2.*lambda) );
         // make a copy of the gauge field
-        copy_from_gauge_field(link_copy)
-
+        //copy_from_gauge_field(linkcopyXUP, linkcopyYUP, linkcopyZUP, linkcopyTUP);
         //Update the U-field temporarily.
-        update_u          (-dtau*dtau * one_twentyfour);
-        update_h_gauge    ( labmda * dtau );
+        //update_u          (-dtau*dtau * one_twentyfour);
+        //update_h_gauge    ( lambda * dtau );
         //Restore original U-field back.
-        /*
-        FORALLSITES(i,s){
-            su3mat_copy(linkcopyXUP+i,&(s->link[XUP]));
-            su3mat_copy(linkcopyYUP+i,&(s->link[YUP]));
-            su3mat_copy(linkcopyZUP+i,&(s->link[ZUP]));
-            su3mat_copy(linkcopyTUP+i,&(s->link[TUP]));
-        }
-        */
+	//copy_to_gauge_field(linkcopyXUP, linkcopyYUP, linkcopyZUP, linkcopyTUP);
         update_u          ( dtau *0.5 );
         if(step == steps){// double the last step to make up for the first, except for the last iteration
         update_h_gauge  ( dtau *lambda );
@@ -261,7 +269,11 @@ void update_u_inner_pqpqp_FGI( Real tau, int steps) {
         }
     }
     // free the link_copy memory
-    free(link_copy);
+    //free(link_copy);
+    /*free(linkcopyXUP);
+    free(linkcopyYUP);
+    free(linkcopyZUP);
+    free(linkcopyTUP);*/
 }
 
 int update()  {
@@ -542,9 +554,9 @@ int update()  {
             if(step == 2){
                 iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
             }
-            update_u_inner_pqpqp_FGI     ( epsilon, inner_steps, inner_lambda);
+            update_u_inner_pqpqp_FGI     ( epsilon, inner_steps, lambda);
             iters += update_h_fermion    ( epsilon*(2.0-outer_lambda), multi_x);
-            update_u_inner_pqpqp_FGI     ( epsilon, inner_steps, inner_lambda);
+            update_u_inner_pqpqp_FGI     ( epsilon, inner_steps, lambda );
             if(step == steps){
                 iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
             }
