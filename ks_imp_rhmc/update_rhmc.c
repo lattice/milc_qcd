@@ -199,49 +199,69 @@ update_h_gauge( dtau / 6) - adds deltaP back to P
 restore gauge field
 */
 
-void update_u_inner_pqpqp_FGI( Real tau, int steps, Real lambda) {
+void copy_from_gauge_field(su3_matrix *link_copy){
+    //This is where the action comes from.
+    for(dir=XUP; dir<=TUP; dir++){
+        register int i;
+        register site *s;
+        FORALLSITES(i,s){
+            su3mat_copy(&(s->link[dir]),link_copy[dir]+i);
+        }
+    }
 
+    /* copy link field to old_link */
+    //gauge_field_copy( F_OFFSET(link[0]), F_OFFSET(old_link[0]));
+
+
+void update_u_inner_pqpqp_FGI( Real tau, int steps) {
+
+    Real lambda         = 0.166666666667
+    Real one_twentyfour = 0.041666666666
     Real dtau = tau / steps;
+
+    // allocate memory for gauge field copy
+    su3_matrix *link_copy[4];
+    link_copy = malloc(4 * sizeof(su3_matrix) * sites_on_node);
+    /*
+    su3_matrix *linkcopyXUP, *linkcopyYUP, *linkcopyZUP, *linkcopyTUP;
+    linkcopyXUP = malloc(sizeof(su3_matrix)*sites_on_node);
+    linkcopyYUP = malloc(sizeof(su3_matrix)*sites_on_node);
+    linkcopyZUP = malloc(sizeof(su3_matrix)*sites_on_node);
+    linkcopyTUP = malloc(sizeof(su3_matrix)*sites_on_node);
+    */
+
     /* do "steps" microcanonical steps (one "step" = one force evaluation)"  */
     for(int step=1; step <= steps; step++){
-	if(step == 1){//only do first step the first itteration through loop
-	    update_h_gauge( dtau *lambda );
-	}
-	update_u          ( dtau *0.5 );
-	update_h_gauge    ( dtau *(1-2.*lambda) );
-	//Copy the current gauge field into a temporary field.
-	su3_matrix *linkcopyXUP, *linkcopyYUP, *linkcopyZUP, *linkcopyTUP;
-	linkcopyXUP = malloc(sizeof(su3_matrix)*sites_on_node);
-	linkcopyYUP = malloc(sizeof(su3_matrix)*sites_on_node);
-	linkcopyZUP = malloc(sizeof(su3_matrix)*sites_on_node);
-	linkcopyTUP = malloc(sizeof(su3_matrix)*sites_on_node);
-	//This is where the action comes from.
-	register int i;
-	register site *s;
-	FORALLSITES(i,s){
-	  su3mat_copy(&(s->link[XUP]),linkcopyXUP+i);
-	  su3mat_copy(&(s->link[YUP]),linkcopyYUP+i);
-	  su3mat_copy(&(s->link[ZUP]),linkcopyZUP+i);
-	  su3mat_copy(&(s->link[TUP]),linkcopyTUP+i);
-	}
-	//Update the U-field temporarily.
-	update_u          (-dtau*dtau*0.4166666);
-	update_h_gauge    ( .167 );
-	//Restore original U-field back.
-	FORALLSITES(i,s){
-	  su3mat_copy(linkcopyXUP+i,&(s->link[XUP]));
-	  su3mat_copy(linkcopyYUP+i,&(s->link[YUP]));
-	  su3mat_copy(linkcopyZUP+i,&(s->link[ZUP]));
-	  su3mat_copy(linkcopyTUP+i,&(s->link[TUP]));
-	}
-	update_u          ( dtau *0.5 );
-	if(step == steps){// double the last step to make up for the first, except for the last iteration
-	  update_h_gauge  ( dtau *lambda );
-	}
-	else{
-	  update_h_gauge  ( dtau *2.0*lambda );
-	}
+        if(step == 1){//only do first step the first itteration through loop
+            update_h_gauge( dtau *lambda );
+        }
+        update_u          ( dtau *0.5 );
+        update_h_gauge    ( dtau *(1-2.*lambda) );
+        // make a copy of the gauge field
+        copy_from_gauge_field(link_copy)
+
+        //Update the U-field temporarily.
+        update_u          (-dtau*dtau * one_twentyfour);
+        update_h_gauge    ( labmda * dtau );
+        //Restore original U-field back.
+        /*
+        FORALLSITES(i,s){
+            su3mat_copy(linkcopyXUP+i,&(s->link[XUP]));
+            su3mat_copy(linkcopyYUP+i,&(s->link[YUP]));
+            su3mat_copy(linkcopyZUP+i,&(s->link[ZUP]));
+            su3mat_copy(linkcopyTUP+i,&(s->link[TUP]));
+        }
+        */
+        update_u          ( dtau *0.5 );
+        if(step == steps){// double the last step to make up for the first, except for the last iteration
+        update_h_gauge  ( dtau *lambda );
+            }
+        else{
+            update_h_gauge  ( dtau *2.0*lambda );
+        }
     }
+    // free the link_copy memory
+    free(link_copy);
 }
 
 int update()  {
