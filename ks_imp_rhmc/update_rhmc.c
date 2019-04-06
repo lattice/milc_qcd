@@ -183,23 +183,23 @@ void update_u_inner_pqpqp( Real tau, int steps, Real lambda) {
 
 //NEW NOTES
 /*
-make lambda = 1/6 ASG:DONE
-remove memory leak ASG:DONE
+make lambda = 1/6 - ASG:DONE
+remove memory leak - ASG:DONE
 do a test where we turn off FGI and agree with OMELEYAN with 1/6
 
 
-make copy of P field and U field
-0-out U-field
-update_h_gauge with 1.0  - defining Fj Tj
-update_u (-dtau**2 / 24)
+make copy of P field and U field - ASG:DONE
+0-out U-field - ASG: Pretty sure Andre means P not U, also DONE
+update_h_gauge with 1.0  - defining Fj Tj - ASG:DONE
+update_u (-dtau**2 / 24) - ASG:DONE
 
-restore momentum field to global
-update_h_gauge( dtau / 6) - adds deltaP back to P
+restore momentum field to global - ASG:DONE
+update_h_gauge( dtau / 6) - adds deltaP back to P - ASG:DONE
 
-restore gauge field
+restore gauge field - ASG:DONE
 */
 
-void copy_from_gauge_field(su3_matrix *linkcopyXUP, 
+void copy_gauge_field(su3_matrix *linkcopyXUP, 
     su3_matrix *linkcopyYUP,
     su3_matrix *linkcopyZUP, 
     su3_matrix *linkcopyTUP){
@@ -216,7 +216,7 @@ void copy_from_gauge_field(su3_matrix *linkcopyXUP,
   }
 }
 
-void copy_to_gauge_field(su3_matrix *linkcopyXUP, 
+void restore_gauge_field(su3_matrix *linkcopyXUP, 
     su3_matrix *linkcopyYUP,
     su3_matrix *linkcopyZUP, 
     su3_matrix *linkcopyTUP){
@@ -227,6 +227,74 @@ void copy_to_gauge_field(su3_matrix *linkcopyXUP,
       su3mat_copy(linkcopyYUP+i, &(s->link[YUP]));
       su3mat_copy(linkcopyZUP+i, &(s->link[ZUP]));
       su3mat_copy(linkcopyTUP+i, &(s->link[TUP]));
+  }
+}
+
+void copy_momentum(anti_hermitmat *momentumcopy) 
+{
+  int i,dir;
+  site *s;
+  anti_hermitmat* momentum;
+  field_offset mom_off = F_OFFSET(mom);
+  FORALLUPDIR(dir){
+    FORALLSITES(i,s) {
+      momentum = (anti_hermitmat *)F_PT(s,mom_off);
+      //uncompress_anti_hermitian( momentum+dir, &tmat );
+      //memcpy((void *)&temp[i], (void *)&tmat, sizeof(QLA_ColorMatrix));
+      (momentumcopy+i+dir*sites_on_node)->m01.real=(momentum+dir)->m01.real;
+      (momentumcopy+i+dir*sites_on_node)->m01.imag=(momentum+dir)->m01.imag;
+      (momentumcopy+i+dir*sites_on_node)->m02.real=(momentum+dir)->m02.real;
+      (momentumcopy+i+dir*sites_on_node)->m02.imag=(momentum+dir)->m02.imag;
+      (momentumcopy+i+dir*sites_on_node)->m12.real=(momentum+dir)->m12.real;
+      (momentumcopy+i+dir*sites_on_node)->m12.imag=(momentum+dir)->m12.imag;
+      (momentumcopy+i+dir*sites_on_node)->m00im=(momentum+dir)->m00im;
+      (momentumcopy+i+dir*sites_on_node)->m11im=(momentum+dir)->m11im;
+      (momentumcopy+i+dir*sites_on_node)->m22im=(momentum+dir)->m22im;
+    }
+  }
+}
+
+void restore_momentum(anti_hermitmat *momentumcopy) 
+{
+  int i,dir;
+  site *s;
+  anti_hermitmat* momentum;
+  field_offset mom_off = F_OFFSET(mom);
+  FORALLUPDIR(dir){
+    FORALLSITES(i,s) {
+      momentum = (anti_hermitmat *)F_PT(s,mom_off);
+      (momentum+dir)->m01.real=(momentumcopy+i+dir*sites_on_node)->m01.real;
+      (momentum+dir)->m01.imag=(momentumcopy+i+dir*sites_on_node)->m01.imag;
+      (momentum+dir)->m02.real=(momentumcopy+i+dir*sites_on_node)->m02.real;
+      (momentum+dir)->m02.imag=(momentumcopy+i+dir*sites_on_node)->m02.imag;
+      (momentum+dir)->m12.real=(momentumcopy+i+dir*sites_on_node)->m12.real;
+      (momentum+dir)->m12.imag=(momentumcopy+i+dir*sites_on_node)->m12.imag;
+      (momentum+dir)->m00im=(momentumcopy+i+dir*sites_on_node)->m00im;
+      (momentum+dir)->m11im=(momentumcopy+i+dir*sites_on_node)->m11im;
+      (momentum+dir)->m22im=(momentumcopy+i+dir*sites_on_node)->m22im;
+    }
+  }
+}
+
+void zero_momentum() 
+{
+  int i,dir;
+  site *s;
+  anti_hermitmat* momentum;
+  field_offset mom_off = F_OFFSET(mom);
+  FORALLUPDIR(dir){
+    FORALLSITES(i,s) {
+      momentum = (anti_hermitmat *)F_PT(s,mom_off);
+      (momentum+dir)->m01.real=0;
+      (momentum+dir)->m01.imag=0;
+      (momentum+dir)->m02.real=0;
+      (momentum+dir)->m02.imag=0;
+      (momentum+dir)->m12.real=0;
+      (momentum+dir)->m12.imag=0;
+      (momentum+dir)->m00im=0;
+      (momentum+dir)->m11im=0;
+      (momentum+dir)->m22im=0;
+    }
   }
 }
 
@@ -244,6 +312,9 @@ void update_u_inner_pqpqp_FGI( Real tau, int steps) {
     linkcopyYUP = malloc(sizeof(su3_matrix)*sites_on_node);
     linkcopyZUP = malloc(sizeof(su3_matrix)*sites_on_node);
     linkcopyTUP = malloc(sizeof(su3_matrix)*sites_on_node);
+    anti_hermitmat *momentumcopy;
+    momentumcopy = malloc(sizeof(anti_hermitmat)*sites_on_node*4);
+    //This holds all 4 directions.
 
     /* do "steps" microcanonical steps (one "step" = one force evaluation)"  */
     for(int step=1; step <= steps; step++){
@@ -253,12 +324,22 @@ void update_u_inner_pqpqp_FGI( Real tau, int steps) {
         update_u          ( dtau *0.5 );
         update_h_gauge    ( dtau *(1-2.*lambda) );
         // make a copy of the gauge field
-        copy_from_gauge_field(linkcopyXUP, linkcopyYUP, linkcopyZUP, linkcopyTUP);
-        //Update the U-field temporarily.
+        copy_gauge_field(linkcopyXUP, linkcopyYUP, linkcopyZUP, linkcopyTUP);
+	//Make a copy of the momentum field.
+	copy_momentum(momentumcopy);
+	//Zero momentum field, so the force that updates U to U' can be computed.
+	zero_momentum();
+	//Calculate the force that makes U into U'
+	update_h_gauge    ( 1.0 );
+        //Update the U-field temporarily to U'.
         update_u          (-dtau*dtau * one_twentyfour);
-        //update_h_gauge    ( lambda * dtau );
+	//Restore original momentum, so the force from U' can be added to it.
+	restore_momentum(momentumcopy);
+	//Add the force contribution from U' to momentum.
+	update_h_gauge    ( lambda * dtau );
         //Restore original U-field back.
-	copy_to_gauge_field(linkcopyXUP, linkcopyYUP, linkcopyZUP, linkcopyTUP);
+	restore_gauge_field(linkcopyXUP, linkcopyYUP, linkcopyZUP, linkcopyTUP);
+	//Continue with the rest of the usual PQPQP nonsense.
         update_u          ( dtau *0.5 );
         if(step == steps){// double the last step to make up for the first, except for the last iteration
         update_h_gauge  ( dtau *lambda );
@@ -273,6 +354,8 @@ void update_u_inner_pqpqp_FGI( Real tau, int steps) {
     free(linkcopyYUP);
     free(linkcopyZUP);
     free(linkcopyTUP);
+    //Free copy of momentum.
+    free(momentumcopy);
 }
 
 int update()  {
