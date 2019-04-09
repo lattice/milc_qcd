@@ -336,7 +336,7 @@ void update_u_inner_pqpqp_FGI( Real tau, int steps) {
 	//Restore original momentum, so the force from U' can be added to it.
 	restore_momentum(momentumcopy);
 	//Add the force contribution from U' to momentum.
-	update_h_gauge    ( lambda * dtau );
+	update_h_gauge    ( (1-2.*lambda) * dtau );
         //Restore original U-field back.
 	restore_gauge_field(linkcopyXUP, linkcopyYUP, linkcopyZUP, linkcopyTUP);
 	//Continue with the rest of the usual PQPQP nonsense.
