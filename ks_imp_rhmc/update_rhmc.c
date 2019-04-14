@@ -322,7 +322,9 @@ void update_u_inner_pqpqp_FGI( Real tau, int steps) {
             update_h_gauge( dtau *lambda );
         }
         update_u          ( dtau *0.5 );
-        update_h_gauge    ( dtau *(1-2.*lambda) );
+        //update_h_gauge    ( dtau *(1-2.*lambda) );
+	//In force gradient stuff, the 2/3*(1-1/24*tau^2) is expanded to produce this update below.
+	//This update_h_gauge would be double counting.
         // make a copy of the gauge field
         copy_gauge_field(linkcopyXUP, linkcopyYUP, linkcopyZUP, linkcopyTUP);
 	//Make a copy of the momentum field.
