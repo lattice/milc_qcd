@@ -428,7 +428,6 @@ int update()  {
     break;
     case INT_PQPQP_FGI:
         outer_lambda = atof(strdup(getenv("OUTER_LAMBDA")));
-        inner_lambda = atof(strdup(getenv("INNER_LAMBDA")));
         inner_steps  = atof(strdup(getenv("INNER_STEPS")));
         node0_printf("PQPQP_FGI %dG1F integration, outer_steps= %d eps= %e outer_lambda= %e \
             inner_steps= %d inner_lambda= %e\n",inner_steps,steps,epsilon,outer_lambda,inner_steps,inner_lambda);
