@@ -302,8 +302,10 @@ void zero_momentum()
 
 void update_u_inner_pqpqp_FGI( Real tau, int steps) {
 
-    Real lambda         = 0.16666667;
-    Real one_twentyfour = 0.04166667;
+    //Real lambda         = 0.16666667;
+    Real lambda         = 0.66666667;
+    //Real one_twentyfour = 0.04166667;
+    Real one_twentyfour = 0.16666667;
     Real dtau = tau / steps;
 
     // allocate memory for gauge field copy
@@ -317,38 +319,46 @@ void update_u_inner_pqpqp_FGI( Real tau, int steps) {
     //This holds all 4 directions.
 
     /* do "steps" microcanonical steps (one "step" = one force evaluation)"  */
-    for(int step=1; step <= steps; step++){
-        if(step == 1){//only do first step the first iteration through loop
-            update_h_gauge( dtau *lambda );
-        }
-        update_u          ( dtau *0.5 );
-        //update_h_gauge    ( dtau *(1-2.*lambda) );
-	//In force gradient stuff, the 2/3*(1-1/24*tau^2) is expanded to produce this update below.
-	//This update_h_gauge would be double counting.
-        // make a copy of the gauge field
-        copy_gauge_field(linkcopyXUP, linkcopyYUP, linkcopyZUP, linkcopyTUP);
-	//Make a copy of the momentum field.
-	copy_momentum(momentumcopy);
-	//Zero momentum field, so the force that updates U to U' can be computed.
-	zero_momentum();
-	//Calculate the force that makes U into U'
-	update_h_gauge    ( 1.0 );
-        //Update the U-field temporarily to U'.
-        update_u          (-dtau*dtau * one_twentyfour);
-	//Restore original momentum, so the force from U' can be added to it.
-	restore_momentum(momentumcopy);
-	//Add the force contribution from U' to momentum.
-	update_h_gauge    ( (1-2.*lambda) * dtau );
-        //Restore original U-field back.
-	restore_gauge_field(linkcopyXUP, linkcopyYUP, linkcopyZUP, linkcopyTUP);
-	//Continue with the rest of the usual PQPQP nonsense.
-        update_u          ( dtau *0.5 );
-        if(step == steps){// double the last step to make up for the first, except for the last iteration
+    //for(int step=1; step <= steps; step++){
+    for(int step=2; step <= steps; step+=2){
+      //if(step == 1){//only do first step the first iteration through loop
+	    if(step == 2){//only do first step the first iteration through loop
+        //update_h_gauge( dtau *lambda );
+	      update_h_gauge( 0.5*dtau *lambda );
+      }
+      //update_u          ( dtau *0.5 );
+	    update_u          ( dtau );
+      //update_h_gauge    ( dtau *(1-2.*lambda) );
+	    //In force gradient stuff, the 2/3*tau*(1-1/24*tau^2*F^je^j) is expanded below.
+	    //This update_h_gauge would be double counting.
+      // make a copy of the gauge field
+      copy_gauge_field(linkcopyXUP, linkcopyYUP, linkcopyZUP, linkcopyTUP);
+      //Make a copy of the momentum field.
+      copy_momentum(momentumcopy);
+      //Zero momentum field, so the force that updates U to U' can be computed.
+      zero_momentum();
+      //Calculate the force that makes U into U'
+      update_h_gauge    ( 1.0 );
+      //Update the U-field temporarily to U'.
+      update_u          (-dtau*dtau * one_twentyfour);
+      //Restore original momentum, so the force from U' can be added to it.
+      restore_momentum(momentumcopy);
+      //Add the force contribution from U' to momentum.
+      //update_h_gauge    ( (1-2.*lambda) * dtau );
+      update_h_gauge    ( (2-lambda) * dtau );
+      //Restore original U-field back.
+      restore_gauge_field(linkcopyXUP, linkcopyYUP, linkcopyZUP, linkcopyTUP);
+      //Continue with the rest of the usual PQPQP nonsense.
+      //update_u          ( dtau *0.5 );
+	    update_u          ( dtau  );
+      if(step == steps){// double the last step to make up for the first, except for the last iteration
+        //update_h_gauge  ( dtau *lambda );
+        update_h_gauge  ( 0.5*dtau *lambda );
+          }
+      else{
+        //update_h_gauge  ( dtau *2.0*lambda );
         update_h_gauge  ( dtau *lambda );
-            }
-        else{
-            update_h_gauge  ( dtau *2.0*lambda );
-        }
+      }
     }
     // free the link_copy memory
     //free(link_copy);
