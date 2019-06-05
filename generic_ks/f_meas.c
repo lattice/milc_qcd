@@ -168,8 +168,10 @@ void f_meas_imp_field( int npbp_reps, quark_invert_control *qic, Real mass,
     Real r_ferm_action;
     /* local variables for accumulators */
     register int i;
+    register site *s; //ASG put this for tslice averaging.
     double rfaction;
     double_complex pbp_e, pbp_o;
+    pbp_o_tslices = malloc(sizeof(double_complex));
     complex cc;
 
     int jpbp_reps;
@@ -275,7 +277,8 @@ void f_meas_imp_field( int npbp_reps, quark_invert_control *qic, Real mass,
       }
 
       /* psi-bar-psi on odd sites */
-      FORODDFIELDSITES(i){
+      //FORODDFIELDSITES(i){ //Changed this loop so tslices can be accumulated.
+      FORODDFIELDSITES(i,s){
 	cc = su3_dot( gr+i, M_inv_gr+i );
 	CSUM(pbp_o, cc);
 #ifdef DM_DU0
