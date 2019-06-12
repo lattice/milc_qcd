@@ -171,7 +171,11 @@ void f_meas_imp_field( int npbp_reps, quark_invert_control *qic, Real mass,
     register site *s; //ASG put this for tslice averaging.
     double rfaction;
     double_complex pbp_e, pbp_o;
-    pbp_o_tslices = malloc(sizeof(double_complex));
+    //ASG: Array for tslice
+    double_complex *pbp_o_tslices;
+    pbp_o_tslices = malloc(sizeof(double_complex)*nt);
+    double_complex *pbp_e_tslices;
+    pbp_e_tslices = malloc(sizeof(double_complex)*nt);
     complex cc;
 
     int jpbp_reps;
@@ -252,10 +256,14 @@ void f_meas_imp_field( int npbp_reps, quark_invert_control *qic, Real mass,
 
       /* fermion action = M_gr.M_inv_gr */
       /* psi-bar-psi on even sites = gr.M_inv_gr */
-      FOREVENFIELDSITES(i){
+      //ASG: hack even-site loop to accumulate by tslice.
+      //FOREVENFIELDSITES(i){
+      FOREVENSITES(i,s){
 	rfaction += su3_rdot( M_gr+i, M_inv_gr+i );
 	cc = su3_dot( gr+i, M_inv_gr+i );
 	CSUM(pbp_e, cc);
+  //ASG accumulate based on tslice.
+  CSUM(*(pbp_e_tslices + s->t), cc)
 
 #ifdef DM_DU0
 	/* r_pb_dMdu_p_even = gr * dM/du0 M^{-1} gr |even*/
@@ -277,10 +285,12 @@ void f_meas_imp_field( int npbp_reps, quark_invert_control *qic, Real mass,
       }
 
       /* psi-bar-psi on odd sites */
-      //FORODDFIELDSITES(i){ //Changed this loop so tslices can be accumulated.
-      FORODDFIELDSITES(i,s){
+      //FORODDFIELDSITES(i){ //ASG: Changed this loop so tslices can be accumulated.
+      FORODDSITES(i,s){
 	cc = su3_dot( gr+i, M_inv_gr+i );
 	CSUM(pbp_o, cc);
+  //ASG accumulate based on tslice.
+  CSUM(*(pbp_o_tslices + s->t), cc)
 #ifdef DM_DU0
 	/* r_pb_dMdu_p_odd = gr * dM/du0 M^{-1} gr |odd*/
 	r_pb_dMdu_p_odd += su3_rdot( gr+i, dMdu_x+i );
@@ -338,6 +348,17 @@ void f_meas_imp_field( int npbp_reps, quark_invert_control *qic, Real mass,
 		   r_psi_bar_psi_even, r_psi_bar_psi_odd,
 		   i_psi_bar_psi_even, i_psi_bar_psi_odd,
 		   jpbp_reps+1, npbp_reps);
+      //ASG: Print out tslice loop.
+      for (int t = 0; t < nt; t++)
+      {
+        node0_printf("PBP: mass %e     tslice %d %e  %e  %e  %e ( %d of %d )\n", mass, t,
+         (pbp_e_tslices + t)->real*(2.0/(double)volume), (pbp_o_tslices + t)->real*(2.0/(double)volume),
+         (pbp_e_tslices + t)->real*(2.0/(double)volume), (pbp_o_tslices + t)->imag*(2.0/(double)volume),
+         jpbp_reps+1, npbp_reps);
+      }
+      //ASG: Now free the tslices pbps.
+      free(pbp_e_tslices);
+      free(pbp_o_tslices);
       node0_printf("FACTION: mass = %e,  %e ( %d of %d )\n", mass,
 		   r_ferm_action, jpbp_reps+1, npbp_reps);
 
