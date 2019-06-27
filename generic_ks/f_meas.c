@@ -269,8 +269,8 @@ void f_meas_imp_field( int npbp_reps, quark_invert_control *qic, Real mass,
 	rfaction += su3_rdot( M_gr+i, M_inv_gr+i );
 	cc = su3_dot( gr+i, M_inv_gr+i );
 	CSUM(pbp_e, cc);
-  //ASG accumulate based on tslice.
-  CSUM(*(pbp_e_tslices + s->t), cc)
+        //ASG accumulate based on tslice.
+        CSUM(*(pbp_e_tslices + s->t), cc)
 
 #ifdef DM_DU0
 	/* r_pb_dMdu_p_even = gr * dM/du0 M^{-1} gr |even*/
@@ -296,8 +296,8 @@ void f_meas_imp_field( int npbp_reps, quark_invert_control *qic, Real mass,
       FORODDSITES(i,s){
 	cc = su3_dot( gr+i, M_inv_gr+i );
 	CSUM(pbp_o, cc);
-  //ASG accumulate based on tslice.
-  CSUM(*(pbp_o_tslices + s->t), cc)
+        //ASG accumulate based on tslice.
+        CSUM(*(pbp_o_tslices + s->t), cc)
 #ifdef DM_DU0
 	/* r_pb_dMdu_p_odd = gr * dM/du0 M^{-1} gr |odd*/
 	r_pb_dMdu_p_odd += su3_rdot( gr+i, dMdu_x+i );
@@ -584,8 +584,8 @@ void f_meas_imp_multi( int n_masses, int npbp_reps, quark_invert_control *qic,
 	rfaction += su3_rdot( M_gr[j]+i, M_inv_gr[j]+i );
 	cc = su3_dot( gr+i, M_inv_gr[j]+i );
 	CSUM(pbp_e, cc);
-  //ASG accumulate based on tslice.
-  CSUM(*(pbp_e_tslices + s->t), cc)
+        //ASG accumulate based on tslice.
+        CSUM(*(pbp_e_tslices + s->t), cc)
 
 #ifdef DM_DU0
 	/* r_pb_dMdu_p_even = gr * dM/du0 M^{-1} gr |even*/
@@ -611,8 +611,8 @@ void f_meas_imp_multi( int n_masses, int npbp_reps, quark_invert_control *qic,
       FORODDSITES(i,s){
 	cc = su3_dot( gr+i, M_inv_gr[j]+i );
 	CSUM(pbp_o, cc);
-  //ASG accumulate based on tslice.
-  CSUM(*(pbp_o_tslices + s->t), cc)
+        //ASG accumulate based on tslice.
+        CSUM(*(pbp_o_tslices + s->t), cc)
 #ifdef DM_DU0
 	/* r_pb_dMdu_p_odd = gr * dM/du0 M^{-1} gr |odd*/
 	r_pb_dMdu_p_odd += su3_rdot( gr+i, dMdu_x[j]+i );
