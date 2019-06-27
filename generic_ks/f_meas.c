@@ -176,6 +176,13 @@ void f_meas_imp_field( int npbp_reps, quark_invert_control *qic, Real mass,
     pbp_o_tslices = malloc(sizeof(double_complex)*nt);
     double_complex *pbp_e_tslices;
     pbp_e_tslices = malloc(sizeof(double_complex)*nt);
+    //ASG: Set all elements of array to 0.
+    //Maybe I should be using memset instead.
+    for(int t = 0; t < nt; t++)
+    {
+      *(pbp_e_tslices + t) = dcmplx(0.0,0.0);
+      *(pbp_o_tslices + t) = dcmplx(0.0,0.0);
+    }
     complex cc;
 
     int jpbp_reps;
@@ -317,6 +324,15 @@ void f_meas_imp_field( int npbp_reps, quark_invert_control *qic, Real mass,
 
       g_dcomplexsum( &pbp_o );
       g_dcomplexsum( &pbp_e );
+      //ASG: MPI All Reduce the tslice arrays.
+      /*g_vecdcomplexsum(&pbp_e_tslices, nt);
+      g_vecdcomplexsum(&pbp_o_tslices, nt);*/
+      //Instead of doing the above, I reduce the elements one at a time.
+      for(int t = 0; t < nt; t++)
+      {
+        g_dcomplexsum((pbp_e_tslices + t));
+        g_dcomplexsum((pbp_o_tslices + t));
+      }
       g_doublesum( &rfaction );
       
 #ifdef DM_DU0
@@ -353,7 +369,7 @@ void f_meas_imp_field( int npbp_reps, quark_invert_control *qic, Real mass,
       {
         node0_printf("PBP: mass %e     tslice %d %e  %e  %e  %e ( %d of %d )\n", mass, t,
          (pbp_e_tslices + t)->real*(2.0/(double)volume), (pbp_o_tslices + t)->real*(2.0/(double)volume),
-         (pbp_e_tslices + t)->real*(2.0/(double)volume), (pbp_o_tslices + t)->imag*(2.0/(double)volume),
+         (pbp_e_tslices + t)->imag*(2.0/(double)volume), (pbp_o_tslices + t)->imag*(2.0/(double)volume),
          jpbp_reps+1, npbp_reps);
       }
       //ASG: Now free the tslices pbps.
@@ -511,8 +527,21 @@ void f_meas_imp_multi( int n_masses, int npbp_reps, quark_invert_control *qic,
     for(j = 0; j < n_masses; j++){
       complex cc;
       double rfaction = 0.0;
+      register site *s; //ASG put this for tslice averaging.
       double_complex pbp_e = dcmplx(0.0,0.0);
       double_complex pbp_o = dcmplx(0.0,0.0);
+      //ASG: Array for tslice
+      double_complex *pbp_o_tslices;
+      pbp_o_tslices = malloc(sizeof(double_complex)*nt);
+      double_complex *pbp_e_tslices;
+      pbp_e_tslices = malloc(sizeof(double_complex)*nt);
+      //ASG: Set all elements of array to 0.
+      //Maybe I should be using memset instead.
+      for(int t = 0; t < nt; t++)
+      {
+        *(pbp_e_tslices + t) = dcmplx(0.0,0.0);
+        *(pbp_o_tslices + t) = dcmplx(0.0,0.0);
+      }
       Real r_psi_bar_psi_even, i_psi_bar_psi_even;
       Real r_psi_bar_psi_odd, i_psi_bar_psi_odd;
       Real r_ferm_action;
@@ -549,10 +578,14 @@ void f_meas_imp_multi( int n_masses, int npbp_reps, quark_invert_control *qic,
 
       /* fermion action = M_gr.M_inv_gr */
       /* psi-bar-psi on even sites = gr.M_inv_gr */
-      FOREVENFIELDSITES(i){
+      //ASG: hack even-site loop to accumulate by tslice.
+      //FOREVENFIELDSITES(i){
+      FOREVENSITES(i,s){
 	rfaction += su3_rdot( M_gr[j]+i, M_inv_gr[j]+i );
 	cc = su3_dot( gr+i, M_inv_gr[j]+i );
 	CSUM(pbp_e, cc);
+  //ASG accumulate based on tslice.
+  CSUM(*(pbp_e_tslices + s->t), cc)
 
 #ifdef DM_DU0
 	/* r_pb_dMdu_p_even = gr * dM/du0 M^{-1} gr |even*/
@@ -574,9 +607,12 @@ void f_meas_imp_multi( int n_masses, int npbp_reps, quark_invert_control *qic,
       }
 
       /* psi-bar-psi on odd sites */
-      FORODDFIELDSITES(i){
+      //FORODDFIELDSITES(i){ //ASG: Changed this loop so tslices can be accumulated.
+      FORODDSITES(i,s){
 	cc = su3_dot( gr+i, M_inv_gr[j]+i );
 	CSUM(pbp_o, cc);
+  //ASG accumulate based on tslice.
+  CSUM(*(pbp_o_tslices + s->t), cc)
 #ifdef DM_DU0
 	/* r_pb_dMdu_p_odd = gr * dM/du0 M^{-1} gr |odd*/
 	r_pb_dMdu_p_odd += su3_rdot( gr+i, dMdu_x[j]+i );
@@ -634,6 +670,26 @@ void f_meas_imp_multi( int n_masses, int npbp_reps, quark_invert_control *qic,
 		   r_psi_bar_psi_even, r_psi_bar_psi_odd,
 		   i_psi_bar_psi_even, i_psi_bar_psi_odd,
 		   jpbp_reps+1, npbp_reps);
+      //ASG: MPI All Reduce the tslice arrays.
+      /*g_vecdcomplexsum(&pbp_e_tslices, nt);
+      g_vecdcomplexsum(&pbp_o_tslices, nt);*/
+      //Instead of doing the above, I reduce the elements one at a time.
+      for(int t = 0; t < nt; t++)
+      {
+        g_dcomplexsum((pbp_e_tslices + t));
+        g_dcomplexsum((pbp_o_tslices + t));
+      }
+      //ASG: Print out tslice loop.
+      for (int t = 0; t < nt; t++)
+      {
+        node0_printf("PBP: mass %e     tslice %d %e  %e  %e  %e ( %d of %d )\n", mass[j], t,
+         (pbp_e_tslices + t)->real*(2.0/(double)volume), (pbp_o_tslices + t)->real*(2.0/(double)volume),
+         (pbp_e_tslices + t)->imag*(2.0/(double)volume), (pbp_o_tslices + t)->imag*(2.0/(double)volume),
+         jpbp_reps+1, npbp_reps);
+      }
+      //ASG: Now free the tslices pbps.
+      free(pbp_e_tslices);
+      free(pbp_o_tslices);
       node0_printf("FACTION: mass = %e,  %e ( %d of %d )\n", mass[j],
 		   r_ferm_action, jpbp_reps+1, npbp_reps);
       
