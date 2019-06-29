@@ -35,7 +35,7 @@ typedef struct {
 
     /* Now come the physical fields, program dependent */
 	/* gauge field */
-	su3_matrix link[4];
+	su3_matrix link[4] ALIGNMENT;
 
 	/* The Kogut-Susskind phases, which have been absorbed into 
 		the matrices.  Also the antiperiodic boundary conditions.  */
@@ -135,5 +135,10 @@ EXTERN double eps_naik[MAX_NAIK];
 
 /* Storage for the clover term */
 EXTERN clover *gen_clov;
+
+/* For eigenpair calculation */
+EXTERN int Nvecs_tot;
+EXTERN double *eigVal; /* eigenvalues of D^dag D */
+EXTERN su3_vector **eigVec; /* eigenvectors */
 
 #endif /* _LATTICE_H */
