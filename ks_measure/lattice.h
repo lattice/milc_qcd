@@ -39,7 +39,7 @@ typedef struct {
 
     /* Now come the physical fields, program dependent */
 	/* gauge field */
-	su3_matrix link[4];
+	su3_matrix link[4] ALIGNMENT;
 
 	/* The Kogut-Susskind phases, which have been absorbed into 
 		the matrices.  Also the antiperiodic boundary conditions.  */
@@ -131,11 +131,8 @@ EXTERN fermion_links_t    *fn_links;
 //EXTERN ks_action_paths ks_act_paths_dmdu0;
 
 /* For eigenpair calculation */
-#if EIGMODE == EIGCG || EIGMODE == DEFLATION
-EXTERN int active_parity ; /* parity used in eigenvalue calculation */
 EXTERN int Nvecs_tot;
 EXTERN double *eigVal; /* eigenvalues of M^adj M */
 EXTERN su3_vector **eigVec; /* eigenvectors */
-#endif
 
 #endif /* _LATTICE_H */

@@ -121,7 +121,7 @@ gauge_file *save_lattice( int flag, char *filename, char *stringLFN){
     dtime += dclock();
     if(flag != FORGET)
       node0_printf("Time to save = %e\n",dtime);
-#if (PRECISION==1)
+#if (MILC_PRECISION==1)
     node0_printf("CHECK PLAQ: %e %e\n",g_ssplaq,g_stplaq);
     node0_printf("CHECK NERSC LINKTR: %e CKSUM: %x\n",
 		 linktrsum.real/3.,nersc_checksum);
@@ -140,12 +140,13 @@ gauge_file *save_lattice( int flag, char *filename, char *stringLFN){
     RELOAD_ASCII, RELOAD_SERIAL, RELOAD_PARALLEL
 */
 void coldlat(void);
+void warmlat(void);
 
 gauge_file *reload_lattice( int flag, char *filename){
     double dtime;
     gauge_file *gf = NULL;
     Real max_deviation;
-#if PRECISION == 2
+#if MILC_PRECISION == 2
     Real max_deviation2;
 #endif
 
@@ -157,6 +158,10 @@ gauge_file *reload_lattice( int flag, char *filename){
 	    break;
 	case FRESH:	/* cold lattice */
 	    coldlat();
+            gf = NULL;
+	    break;
+	case WARM:	/* warm lattice */
+	    warmlat();
             gf = NULL;
 	    break;
 	case RELOAD_ASCII:	/* read Ascii lattice */
@@ -173,7 +178,7 @@ gauge_file *reload_lattice( int flag, char *filename){
 	    terminate(1);
     }
     dtime += dclock();
-    if(flag != FRESH && flag != CONTINUE)
+    if(flag != FRESH && flag != WARM && flag != CONTINUE)
       node0_printf("Time to reload gauge configuration = %e\n",dtime);
 #ifdef SCHROED_FUN
     set_boundary_fields();
@@ -184,7 +189,7 @@ gauge_file *reload_lattice( int flag, char *filename){
     nersc_checksum = nersc_cksum();
 #endif
     if(this_node==0){
-#if (PRECISION==1)
+#if (MILC_PRECISION==1)
     node0_printf("CHECK PLAQ: %e %e\n",g_ssplaq,g_stplaq);
     node0_printf("CHECK NERSC LINKTR: %e CKSUM: %x\n",
 		 linktrsum.real/3.,nersc_checksum);
@@ -200,7 +205,7 @@ gauge_file *reload_lattice( int flag, char *filename){
     dtime = -dclock();
     max_deviation = check_unitarity();
     g_floatmax(&max_deviation);
-#if (PRECISION==1)
+#if (MILC_PRECISION==1)
     if(this_node==0)printf("Unitarity checked.  Max deviation %.2e\n",
 			   max_deviation); fflush(stdout);
 #else
@@ -300,8 +305,12 @@ int ask_starting_lattice( FILE *fp, int prompt, int *flag, char *filename ){
   if (savebuf == NULL)return 1;
   
   printf("%s ",savebuf);
-  if(strcmp("fresh",savebuf) == 0 ){
+  if(strcmp("fresh",savebuf) == 0 ) {
     *flag = FRESH;
+    printf("\n");
+  }
+  else if(strcmp("warm",savebuf) == 0 ) {
+    *flag = WARM;
     printf("\n");
   }
   else if(strcmp("continue",savebuf) == 0 ) {
@@ -323,7 +332,7 @@ int ask_starting_lattice( FILE *fp, int prompt, int *flag, char *filename ){
   }
   
   /*read name of file and load it */
-  if( *flag != FRESH && *flag != CONTINUE ){
+  if( *flag != FRESH && *flag != WARM && *flag != CONTINUE ){
     if(prompt==1)printf("enter name of file containing lattice\n");
     status=fscanf(fp," %s",filename);
     if(status !=1) {
@@ -541,6 +550,31 @@ void coldlat(void){
     node0_printf("unit gauge configuration loaded\n");
 }
 
+void warmlat(void)
+{
+  int i,j,k,dir;
+  site *sit;
+
+  FORALLSITES(i,sit) {
+    for(dir=XUP;dir<=TUP;dir++) {
+      for(j=0; j<3; j++)  {
+	for(k=0; k<3; k++)  {
+	  Real x = 0.7*gaussian_rand_no(&(sit->site_prn));
+	  Real y = 0.7*gaussian_rand_no(&(sit->site_prn));
+	  if (j != k)  {
+	    sit->link[dir].e[j][k] = cmplx(x,y);
+	  }
+	  else  {
+	    sit->link[dir].e[j][k] = cmplx(1.0+x,y);
+	  }
+	}
+      }
+      reunit_su3((su3_matrix *)&(sit->link[dir]));
+    }
+  }
+  node0_printf("warm gauge configuration loaded\n");
+}
+
 void funnylat(void)  {
     /* sets link matrices to funny matrices for debugging */
     register int i,j,k,dir;
@@ -581,7 +615,7 @@ int get_f( FILE *fp, int prompt, char *tag, Real *value ){
 	while(s != 1){
 	  printf("enter %s ",tag);
 	  fscanf(fp,"%s",checkvalue);
-#if PRECISION == 1
+#if MILC_PRECISION == 1
 	  s=sscanf(checkvalue,"%e",value);
 #else
 	  s=sscanf(checkvalue,"%le",value);
@@ -594,7 +628,7 @@ int get_f( FILE *fp, int prompt, char *tag, Real *value ){
     else  {
       if(get_check_tag(fp, tag, myname) == 1)return 1;
 	  
-#if PRECISION == 1
+#if MILC_PRECISION == 1
       s = fscanf(fp,"%e",value);
 #else
       s = fscanf(fp,"%le",value);
@@ -615,7 +649,7 @@ int get_i( FILE *fp, int prompt, char *tag, int *value ){
       s = 0;
       while(s != 1){
     	printf("enter %s ",tag);
-	fscanf(fp,"%s",checkvalue);
+	s=fscanf(fp,"%s",checkvalue);
     	s=sscanf(checkvalue,"%d",value);
 	if(s==EOF)return 1;
 	if(s==0)printf("Data format error.\n");
@@ -716,7 +750,7 @@ int get_vf( FILE* fp, int prompt, char *tag,
 	s = 0;
 	while(s != 1){
 	  printf("\n[%d] ",i);
-#if PRECISION == 1
+#if MILC_PRECISION == 1
 	  s=scanf("%e",value+i);
 #else
 	  s=scanf("%le",value+i);
@@ -731,7 +765,7 @@ int get_vf( FILE* fp, int prompt, char *tag,
       if(get_check_tag(fp, tag, myname) == 1)return 1;
 	  
       for(i = 0; i < nvalues; i++){
-#if PRECISION == 1
+#if MILC_PRECISION == 1
 	s = fscanf(fp,"%e",value + i);
 #else
 	s = fscanf(fp,"%le",value + i);
@@ -808,7 +842,7 @@ int get_prompt( FILE *fp, int *prompt ){
       }
     }
     if(strcmp(initial_prompt,"prompt") == 0)  {
-      fscanf(fp, "%d",prompt);
+      status = fscanf(fp, "%d",prompt);
     }
     else if(strcmp(initial_prompt,"0") == 0) *prompt=0;
     else if(strcmp(initial_prompt,"1") == 0) *prompt=1;

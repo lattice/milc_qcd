@@ -14,7 +14,11 @@ MAKEFILE = Makefile
 # 1. Machine architecture.  Controls optimization flags here and in libraries.
 #    Can control BINEXT below, a suffix appended to the name of the executable.
 
+<<<<<<< HEAD
 ARCH = # skx knl knc hsw pow8 pow9
+=======
+ARCH ?= # skx knl knc hsw pow8 pow9
+>>>>>>> 6814eb095877bba2e7228fdebc966b7c40c14d61
 
 #----------------------------------------------------------------------
 # 2. Compiler family
@@ -73,8 +77,13 @@ else ifeq ($(strip ${COMPILER}),ibm)
     MY_CC ?= mpixlc_r
     MY_CXX ?= mpixlcxx_r
   else
+<<<<<<< HEAD
     MY_CC ?= bgxlc_r
     MY_CXX ?= bgxlc++_r
+=======
+    MY_CC ?= xlc_r
+    MY_CXX ?= xlc++_r
+>>>>>>> 6814eb095877bba2e7228fdebc966b7c40c14d61
   endif
 
 endif
@@ -100,7 +109,7 @@ CXX = ${MY_CXX}
 # Choices include -g -O, etc
 # Power9 recommendations are -Ofast
 
-OPT              = -O3
+OPT              ?= -O3
 
 # OpenMP?
 
@@ -121,7 +130,11 @@ ifeq ($(strip ${COMPILER}),gnu)
   endif
 
   ifeq ($(strip ${ARCH}),pow9)
+<<<<<<< HEAD
 	ARCH_FLAG = -mcpu=power9 -mtune=power9
+=======
+    ARCH_FLAG = -mcpu=power9 -mtune=power9
+>>>>>>> 6814eb095877bba2e7228fdebc966b7c40c14d61
   endif
 
   ifeq ($(strip ${OMP}),true)
@@ -301,6 +314,7 @@ QMP_BACKEND = QMP_MPI
 SCIDAC = ${HOME}/scidac/install
 TAG=
 # Parallel versions
+<<<<<<< HEAD
 QMPPAR = ${SCIDAC}/qmp${TAG}
 QIOPAR = $(SCIDAC)/qio${TAG}
 # Single processor versions
@@ -310,6 +324,17 @@ QLA = ${SCIDAC}/qla${TAG}
 # Either version
 QDP = ${SCIDAC}/qdp${TAG}
 QOPQDP = ${SCIDAC}/qopqdp${TAG}
+=======
+QMPPAR ?= ${SCIDAC}/qmp${TAG}
+QIOPAR ?= $(SCIDAC)/qio${TAG}
+# Single processor versions
+QMPSNG ?= ${SCIDAC}/qmp-single${TAG}
+QIOSNG ?= $(SCIDAC)/qio-single${TAG}
+QLA ?= ${SCIDAC}/qla${TAG}
+# Either version
+QDP ?= ${SCIDAC}/qdp${TAG}
+QOPQDP ?= ${SCIDAC}/qopqdp${TAG}
+>>>>>>> 6814eb095877bba2e7228fdebc966b7c40c14d61
 
 QOP = ${QOPQDP}
 
@@ -392,9 +417,15 @@ endif
 
 #----------------------------------------------------------------------
 # 14. ARPACK Options (for ks_eigen).  REQUIRES LAPACK AS WELL.
+<<<<<<< HEAD
 
 WANTARPACK = #true
 
+=======
+
+WANTARPACK = #true
+
+>>>>>>> 6814eb095877bba2e7228fdebc966b7c40c14d61
 ifeq ($(strip ${WANTARPACK}),true)
 #  LIBARPACK = -L/usr/lib64 -lparpack  -larpack -lifcore -llapack -lblas
   LIBARPACK = -L/usr/lib64 -larpack
@@ -457,11 +488,14 @@ ifeq ($(strip ${WANTQUDA}),true)
     CGPU += -DUSE_FF_GPU
   endif
 
+<<<<<<< HEAD
   ifeq ($(strip ${WANT_FF_GPU}),true)
     HAVE_FF_GPU = true
     CGPU += -DUSE_FF_GPU
   endif
 
+=======
+>>>>>>> 6814eb095877bba2e7228fdebc966b7c40c14d61
   ifeq ($(strip ${WANT_MIXED_PRECISION_GPU}),1)
     CGPU += -DHALF_MIXED # use single precision where appropriate
   else ifeq ($(strip ${WANT_MIXED_PRECISION_GPU}),2)
@@ -474,6 +508,8 @@ ifeq ($(strip ${WANTQUDA}),true)
   CGPU += -DSET_QUDA_SUMMARIZE
 
 endif
+
+
 
 #----------------------------------------------------------------------
 # 16. QPhiX Options
@@ -612,7 +648,11 @@ ifeq ($(strip ${WANTQPHIXJ}), true)
 
   QPHIXJ_HOME = ../QPhiX_JLab/install/dslash-${QPHIXJ_ARCH}-s${QPHIXJ_SOALEN}
   QPHIXJ_LIBRARIES = ${QPHIXJ_HOME}/lib
+<<<<<<< HEAD
   LIBQPHIXJ = -L${QPHIXJ_LIBRARIES} -lqphix_solver 
+=======
+  LIBQPHIXJ = -L${QPHIXJ_LIBRARIES} -lqphix_solver -lqphix_codegen
+>>>>>>> 6814eb095877bba2e7228fdebc966b7c40c14d61
   QPHIXJ_HEADERS = ${QPHIXJ_HOME}/include
   INCQPHIXJ = -I${QPHIXJ_HEADERS}
 
@@ -773,7 +813,7 @@ CCOMPAT += #-DOLD_STAGGERED2NAIVE
 #     and extra list of dimensions in the parameter input file.
 #     See e.g. ks_imp_rhmc.
 
-CGEOM =#-DFIX_NODE_GEOM
+CGEOM ?=#-DFIX_NODE_GEOM
 
 #------------------------------
 # I/O node grid layout

@@ -183,6 +183,10 @@ void copy_site_member_from_v_field(field_offset sv, su3_vector *v);
 void add_v_fields(su3_vector *vsum, su3_vector *v1, su3_vector *v2);
 void destroy_v_field(su3_vector *v);
 
+void saxpby_v_field(su3_vector *w, Real a, su3_vector *x, Real b, su3_vector *y);
+void saxpbypcz_v_field(su3_vector *w, Real a, su3_vector *x, 
+		       Real b, su3_vector *y, Real c, su3_vector *z);
+
 /* array versions of the above */
 
 Real* create_r_array_field(int n);
@@ -251,6 +255,11 @@ void insert_wv_from_v(wilson_vector *wv, su3_vector *v, int spin);
 
 void extract_v_from_wv(su3_vector *v, wilson_vector *wv, int spin);
 
+void extract_wv_from_swv(wilson_vector *wv, spin_wilson_vector *swv, int spin);
+
+void insert_swv_from_wv(spin_wilson_vector *swv, int spin, wilson_vector *wv);
+
+void insert_swv_from_v(spin_wilson_vector *swv, int spin_src, int spin_snk, su3_vector *v);
 void copy_v_from_ksp(su3_vector *v, ks_prop_field *ksp, int color);
 void insert_ksp_from_v(ks_prop_field *ksp, su3_vector *v, int color);
 
@@ -283,13 +292,18 @@ void gaugefix_combo(int gauge_dir,Real relax_boost,int max_gauge_iter,
 		    int nantiherm, field_offset antiherm_offset[], 
 		    int antiherm_parity[] );
 
-/* gauge_force_imp.c and gauge_force_symzk1_qop.c */
-/* gauge_force_imp.c and gauge_force_symzk1_qop.c */
+/* gauge_force_imp_*.c */
 void imp_gauge_force_cpu( Real eps, field_offset mom_off );
 void imp_gauge_force_gpu( Real eps, field_offset mom_off );
 
+/* gauge_force_symzk1_qphix.c */
+
+void imp_gauge_force_qphix( Real eps, field_offset mom_off );
+
 #ifdef USE_GF_GPU
 #define imp_gauge_force imp_gauge_force_gpu
+#elif USE_GF_QPHIX
+#define imp_gauge_force imp_gauge_force_qphix
 #else
 #define imp_gauge_force imp_gauge_force_cpu
 #endif
@@ -298,6 +312,9 @@ void imp_gauge_force_gpu( Real eps, field_offset mom_off );
 double imp_gauge_action(void);
 void g_measure(void);
 void make_loop_table(void);
+#ifdef ANISOTROPY
+void path_determine_st(void);
+#endif
 void dsdu_qhb_subl(int dir, int subl);
 int get_max_length(void);
 int get_nloop(void);
@@ -418,7 +435,7 @@ complex ploop( void );
 complex ploop_staple(Real alpha_fuzz);
 
 /* project_su3_hit.c */
-void project_su3(
+int project_su3(
    su3_matrix *w,         /* input initial guess. output resulting
                              SU(3) matrix */
    su3_matrix *q,         /* starting 3 x 3 complex matrix */
@@ -511,8 +528,10 @@ void print_field_op_info_list(FILE *fp, char prefix[],
 			      quark_source_sink_op *qss_op[], int n);
 void set_qss_op_offset(quark_source_sink_op *qss_op, int r0[]);
 
-/* rand_gauge.c */
-void rand_gauge(field_offset G);
+/* rand_gauge2.c */
+su3_matrix *create_random_m_field(void);
+void gauge_transform_links(su3_matrix *G);
+void gauge_transform_v_field(su3_vector *v, su3_matrix *G);
 
 /* ranmom.c */
 void ranmom( void );
