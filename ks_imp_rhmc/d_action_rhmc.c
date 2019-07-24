@@ -59,6 +59,9 @@ double fermion_action( su3_vector **multi_x, su3_vector *sumvec) {
 #else
   n = 1;
 #endif
+  //ASG comment out fermion part of the action.
+#if 0
+
   for( inaik=0; inaik<n; inaik++ ) {
     for( jphi=0; jphi<n_pseudo_naik[inaik]; jphi++ ) {
       restore_fermion_links_from_site(fn_links, prec_fa[iphi]);
@@ -78,6 +81,7 @@ double fermion_action( su3_vector **multi_x, su3_vector *sumvec) {
   }
   
   g_doublesum( &sum );
+#endif
   return(sum);
 }
 

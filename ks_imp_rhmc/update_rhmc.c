@@ -569,7 +569,8 @@ int update()  {
         /* update U's to middle of interval */
         update_u(0.5*epsilon);
         /* now update H by full time interval */
-        iters += update_h_rhmc( epsilon, multi_x);
+        //ASG: comment out fermion part of the action update.
+        //iters += update_h_rhmc( epsilon, multi_x);
         /* update U's by half time step to get to even time */
         update_u(epsilon*0.5);
         /* reunitarize the gauge field */
@@ -618,17 +619,18 @@ int update()  {
             as the first and last step, and update_h_ferm only updates
             the momentum, we can double the length of the last step and
             skip the first, except the first and last step */
+            //ASG: comment out fermion part of the action update.
             if(step == 2){
-                iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
+                //iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
             }
             update_u_inner_pqpqp         ( epsilon, inner_steps, inner_lambda);
-            iters += update_h_fermion    ( epsilon*(2.0-outer_lambda), multi_x);
+            //iters += update_h_fermion    ( epsilon*(2.0-outer_lambda), multi_x);
             update_u_inner_pqpqp         ( epsilon, inner_steps, inner_lambda);
             if(step == steps){
-                iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
+                //iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
             }
             else{
-                iters += update_h_fermion( epsilon*outer_lambda, multi_x);
+                //iters += update_h_fermion( epsilon*outer_lambda, multi_x);
             }
             /* reunitarize the gauge field */
             rephase( OFF ); reunitarize(); rephase( ON );
@@ -644,17 +646,18 @@ int update()  {
             as the first and last step, and update_h_ferm only updates
             the momentum, we can double the length of the last step and
             skip the first, except the first and last step */
+            //ASG: comment out fermion part of the action update.
             if(step == 2){
-                iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
+                //iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
             }
             update_u_inner_pqpqp_FGI     ( epsilon, inner_steps);
-            iters += update_h_fermion    ( epsilon*(2.0-outer_lambda), multi_x);
+            //iters += update_h_fermion    ( epsilon*(2.0-outer_lambda), multi_x);
             update_u_inner_pqpqp_FGI     ( epsilon, inner_steps);
             if(step == steps){
-                iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
+                //iters += update_h_fermion( epsilon*0.5*outer_lambda, multi_x);
             }
             else{
-                iters += update_h_fermion( epsilon*outer_lambda, multi_x);
+                //iters += update_h_fermion( epsilon*outer_lambda, multi_x);
             }
             /* reunitarize the gauge field */
             rephase( OFF ); reunitarize(); rephase( ON );
@@ -663,17 +666,19 @@ int update()  {
         /* do "steps" microcanonical steps (one "step" = one force evaluation)"  */
         for(step=2; step <= steps; step+=2){
 	    /* update U's and H's - see header comment */
+            //Commenting out fermion contribution. This can be used for Omelyan rhmd.
+	    //Now this is pure gauge.
      	    update_u( epsilon*( (0.25-0.5*alpha) ) );
 	    update_h_gauge( 0.5*epsilon);
      	    update_u( epsilon*( (0.5-beta)-(0.25-0.5*alpha) ) );
-	    iters += update_h_fermion( epsilon, multi_x);
+	    //iters += update_h_fermion( epsilon, multi_x);
      	    update_u( epsilon*( (0.75+0.5*alpha)-(0.5-beta) ) );
 	    update_h_gauge( 0.5*epsilon);
 
      	    update_u( epsilon*( (1.25-0.5*alpha)-(0.75+0.5*alpha) ) );
 	    update_h_gauge( 0.5*epsilon);
      	    update_u( epsilon*( (1.5+beta)-(1.25-0.5*alpha) ) );
-	    iters += update_h_fermion( epsilon, multi_x);
+	    //iters += update_h_fermion( epsilon, multi_x);
      	    update_u( epsilon*( (1.75+0.5*alpha)-(1.5+beta) ) );
 	    update_h_gauge( 0.5*epsilon);
      	    update_u( epsilon*( (2.0)-(1.75+0.5*alpha) ) );
