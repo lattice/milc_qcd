@@ -248,7 +248,23 @@ void index2coord(unsigned int i, struct meshVars *mesh, unsigned int *coord){
 // Create permutation array for all i rows local on this processor
 // This is problem specific and SHOULD BE ADAPTED
 void hierPerm(struct meshVars *mesh, unsigned int *perm, unsigned int N){
-
+        extern int nx, ny, nz, nt;
+        unsigned int x, y, z, t;
+        for(x = 0; x < nx; ++x){
+                for(y = 0; y < ny; ++y){
+                        for(z = 0; z < nz; ++z){
+                                for(t = 0; t < nt; ++t){
+                                        unsigned int coord[4] = {x, y, z, t};
+                                        unsigned int* coordptr = coord;
+                                        //multi1d<int> chroma_coords;
+                                        //chroma_coords.resize(Nd);
+                                        //chroma_coords[0] = x; chroma_coords[1] = y; chroma_coords[2] = z; chroma_coords[3] = t;
+                                        //int i = Layout::linearSiteIndex(chroma_coords);
+                                        perm[i] = hierOrderPoint(coordptr,mesh);
+                                }
+                        }
+                }
+        }
 }
 
 /***********************************************************/
