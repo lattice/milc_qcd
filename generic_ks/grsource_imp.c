@@ -6,6 +6,7 @@
 */
 #include "generic_ks_includes.h"	/* definitions files and prototypes */
 #include "../include/dslash_ks_redefine.h"
+#include "binaryRecursiveColoring.h"
 
 /* construct a gaussian random vector, g_rand, and phi=M(dagger)*g_rand  */
 /* "parity" is EVEN, ODD, or EVENANDODD.  The parity is the parity at
