@@ -21,3 +21,4 @@
 #include "../include/dirs.h"
 #include "../include/io_ksprop.h"
 #include "../include/check_malloc.h"
+#include "../hier_prob/binaryRecursiveColoring_v2.h"
