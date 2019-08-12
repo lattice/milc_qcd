@@ -2,7 +2,8 @@
 //Many declarations were put in a header file.
 //
 //Modified for MILC_QCD by Heather Maria Switzer
-
+#include "../ks_measure/lattice.h"
+#include "generic_ks_includes.h"
 
 //I put the struct typedef in the header.
 /************************************************************************/
@@ -259,26 +260,29 @@ void hierPerm(struct meshVars *mesh, unsigned int *perm, unsigned int N)
       perm[i] = hierOrderPoint(coord, mesh);
       }*/
     //I loop through all chroma coordinates here and pass them with a pointer.
-    unsigned int Nx = extern nx;
-    unsigned int Ny = extern ny;
-    unsigned int Nz = extern nz;
-    unsigned int Nt = extern nz;
-    for(unsigned int x = 0; x < Nx; x++)
-        for(unsigned int y = 0; y < Ny; y++)
-            for(unsigned int z = 0; z < Nz; z++)
-                for(unsigned int t = 0; t < Nt; t++)
+    extern nx;
+    extern ny;
+    extern nz;
+    extern nz;
+    for(unsigned int x = 0; x < nx; x++)
+        for(unsigned int y = 0; y < ny; y++)
+            for(unsigned int z = 0; z < nz; z++)
+                for(unsigned int t = 0; t < nt; t++)
                 {
                     unsigned int coord[4] = {x, y, z, t};
                     unsigned int* coordptr = coord;
                     su3_vector chroma_coords;
                     chroma_coords.resize(Nd);
                     chroma_coords[0] = x; chroma_coords[1] = y; chroma_coords[2] = z; chroma_coords[3] = t;
-                    int i = linearSiteIndex(chroma_coords, Nx, Ny, Nz, Nt);
+                    int i = linearSiteIndex(chroma_coords, nx, ny, nz, nt);
                     perm[i] = hierOrderPoint(coordptr, mesh);
                 }
 
 }
 
+Real HP_prob_vec(double_prn *prn_pt){
+
+}
 
 /************************************************************************/
 //Not using this for now, this will go in our inline measurements.
