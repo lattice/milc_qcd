@@ -280,10 +280,6 @@ void hierPerm(struct meshVars *mesh, unsigned int *perm, unsigned int N)
 
 }
 
-Real HP_prob_vec(double_prn *prn_pt){
-
-}
-
 /************************************************************************/
 //Not using this for now, this will go in our inline measurements.
 #if 0

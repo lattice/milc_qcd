@@ -6,7 +6,6 @@
 */
 #include "generic_ks_includes.h"	/* definitions files and prototypes */
 #include "../include/dslash_ks_redefine.h"
-#include "binaryRecursiveColoring.h"
 
 /* construct a gaussian random vector, g_rand, and phi=M(dagger)*g_rand  */
 /* "parity" is EVEN, ODD, or EVENANDODD.  The parity is the parity at
@@ -233,26 +232,6 @@ void z2rsource_plain_field( su3_vector *dest, int parity ) {
     }
   }    
 } /* z2rsource_plain_field */
-
-
-/* Construct a hierarchical prbing vector in the site structure */
-/* "parity" is EVEN, ODD, or EVENANDODD*/
-
-void HPsource_plain_field(su3_vector *dest, int parity){
-   int i, j;
-   site *s;
-   FORSOMEPARITY(i, s, parity){
-      for(j = 0; j < 3; ++j){
-#ifdef SITERAND
-         dest[i].c[j].real = HP_prob_vec(&(s->site_prn));
-         dest[i].c[j].imag = HP_prob_vec(&(s->site_prn));
-#else
-         dest[i].c[j].real = HP_prob_vec(&node_prn);
-         dest[i].c[j].imag = HP_prob_vec(&node_prn);
-#endif
-      } /* For loop */
-   } /* FORSOMEPARITY */
-} /* HPsource_plain_field */
 
 
 /* Check congrad by multiplying src by M, compare result to g_rand */
