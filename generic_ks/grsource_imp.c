@@ -234,6 +234,28 @@ void z2rsource_plain_field( su3_vector *dest, int parity ) {
 } /* z2rsource_plain_field */
 
 
+/* Construct HP vector in the site structure */
+/* We don't care about parities */
+
+void HPsource_plain_field( su3_vector *dest){
+   int i, j;
+   site *s;
+
+   FORALLSITES(i, s){
+        for(j = 0; j < 3; ++j){
+#ifdef SITERAND
+        dest[i].c[j].real = HP_no(&(s->site_prn));    // Placeholder function until real function is constructed
+        dest[i].c[j].imag = HP_no(&(s->site_prn));    // Placeholder function until real function is constructed
+#else
+        dest[i].c[j].real = HP_no(&node_prn);    // Placeholder function until real function is constructed
+        dest[i].c[j].imag = HP_no(&node_prn);    // Placeholder function until real function is constructed
+
+#endif
+        }
+   }
+} /* HPsource_plain_field */
+
+
 /* Check congrad by multiplying src by M, compare result to g_rand */
 /* Before calling checkmul() you should call grsource(EVENANDODD) and
    congrad(...,EVENANDODD) */
