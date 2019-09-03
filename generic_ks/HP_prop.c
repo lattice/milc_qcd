@@ -73,7 +73,7 @@ void create_HP(unsigned int starting_vector, unsigned int ending_vector){
    // *******************************************************************
    // TODO: Right now it is following along with Arjun's LaLiBe code
    // that creates all the vectors and inverts them at one time. This
-   // needs to be changed to only store and comoute one HP vector at a
+   // needs to be changed to only store and compute one HP vector at a
    // time.
    // *******************************************************************
 
@@ -87,6 +87,10 @@ void create_HP(unsigned int starting_vector, unsigned int ending_vector){
             for(z = 0; z < nz; z++)
                for(t = 0; t < nt; t++){
                   int chroma_coords[4] = {x, y, z, t};
+                  // int i = linearsiteindex(chroma_coords)
+                  int element = Hada_element(perm[i], (Hperm[HP_index -1]));
+                  //pokeSite(vectors[HP_index - starting_vector], element, chroma_coords);
                }
 
 }
+  
