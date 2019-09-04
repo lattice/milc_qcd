@@ -86,8 +86,8 @@ void create_HP(unsigned int starting_vector, unsigned int ending_vector){
          for(y = 0; y < ny; y++)
             for(z = 0; z < nz; z++)
                for(t = 0; t < nt; t++){
-                  int chroma_coords[4] = {x, y, z, t};
-                  // int i = linearsiteindex(chroma_coords)
+                  //int chroma_coords[4] = {x, y, z, t};
+                  int i = node_index(x, y, z, t);
                   int element = Hada_element(perm[i], (Hperm[HP_index -1]));
                   //pokeSite(vectors[HP_index - starting_vector], element, chroma_coords);
                }
