@@ -78,7 +78,8 @@ void create_HP(unsigned int starting_vector, unsigned int ending_vector){
    // *******************************************************************
 
    // Hold HP vectors we want to invert
-   su3_vector* vectors; // Creates a vector of vectors of su3_vectors
+   su3_vector** vectors; // Creates a vector of vectors of su3_vectors
+   vectors = malloc(sizeof((ending_vector-starting_vector+1)*sizeof(su3_vector*)));
 
    int HP_index, x, y, z, t;
    for(HP_index = starting_vector; HP_index <= ending_vector; HP_index++)
@@ -86,11 +87,29 @@ void create_HP(unsigned int starting_vector, unsigned int ending_vector){
          for(y = 0; y < ny; y++)
             for(z = 0; z < nz; z++)
                for(t = 0; t < nt; t++){
-                  //int chroma_coords[4] = {x, y, z, t};
+                  int chroma_coords[4] = {x, y, z, t};
                   int i = node_index(x, y, z, t);
                   int element = Hada_element(perm[i], (Hperm[HP_index -1]));
                   //pokeSite(vectors[HP_index - starting_vector], element, chroma_coords);
                }
 
+   // For debugging HP vectors
+   int vec_index;
+   for(vec_index = 0; vec_index < sizeof(vectors); vec_index++){
+      printf("Inverting HP vector number %d.\n", vec_index+1);
+      // LatticePropagator noise_prop = zero
+      // Now let's do some dilution...
+      int color;
+      for(color = 0; color < 3; color++){
+         printf("Color source = %d \n", color);
+
+         // LatticeColorVector vec_srce = zero;
+         // LatticeComplex HP_vec = noise_vec*vectors[vec_index];
+         // pokeColor(vec_srce,HP_vec,color_source);
+         // spin vec stuff I don't need...
+      }
+   }
+
+   printf("HP Trace %d - %f \n", vec_index+1, Trace/(vec_index+1));
 }
   

@@ -241,12 +241,6 @@ void index2coord(unsigned int i, struct meshVars *mesh, unsigned int *coord)
     }
 }
 
-
-/* Returns the linear site index of a 4D lattice*/
-int linearSiteIndex(su3_vector chroma_coords, int nx, int ny, int nz, int nt){
-        return chroma_coords[0]*nx*nx*nt + chroma_coords[1]*ny*nz + chroma_coords[2]*nz + chroma_coords[3]; 
-}
-
 /************************************************************************/
 /* Create permutation array for all i rows local on this processor */
 /* This is problem specific and SHOULD BE ADAPTED */
@@ -271,10 +265,7 @@ void hierPerm(struct meshVars *mesh, unsigned int *perm, unsigned int N)
                 {
                     unsigned int coord[4] = {x, y, z, t};
                     unsigned int* coordptr = coord;
-                    su3_vector chroma_coords;
-                    chroma_coords.resize(Nd);
-                    chroma_coords[0] = x; chroma_coords[1] = y; chroma_coords[2] = z; chroma_coords[3] = t;
-                    int i = linearSiteIndex(chroma_coords, nx, ny, nz, nt);
+                    int i = node_index(x, y, z, t);
                     perm[i] = hierOrderPoint(coordptr, mesh);
                 }
 
