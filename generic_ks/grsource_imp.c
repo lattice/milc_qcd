@@ -6,6 +6,7 @@
 */
 #include "generic_ks_includes.h"	/* definitions files and prototypes */
 #include "../include/dslash_ks_redefine.h"
+//#include "binaryRecursiveColoring_v2.h" /* Hierarchical probing definitions */
 
 /* construct a gaussian random vector, g_rand, and phi=M(dagger)*g_rand  */
 /* "parity" is EVEN, ODD, or EVENANDODD.  The parity is the parity at
@@ -236,22 +237,25 @@ void z2rsource_plain_field( su3_vector *dest, int parity ) {
 
 /* Construct HP vector in the site structure */
 /* We don't care about parities */
-
-void HPsource_plain_field( su3_vector *dest){
+/* FOR NOW: Imaginary parts are set to 0*/
+void HPsource_plain_field( su3_vector *dest, int colorSource, unsigned int *perm, unsigned int *Hperm){
    int i, j;
    site *s;
 
    FORALLSITES(i, s){
-        for(j = 0; j < 3; ++j){
-#ifdef SITERAND
-        dest[i].c[j].real = HP_no(&(s->site_prn));    // Placeholder function until real function is constructed
-        dest[i].c[j].imag = HP_no(&(s->site_prn));    // Placeholder function until real function is constructed
-#else
-        dest[i].c[j].real = HP_no(&node_prn);    // Placeholder function until real function is constructed
-        dest[i].c[j].imag = HP_no(&node_prn);    // Placeholder function until real function is constructed
-
-#endif
-        }
+      for(j = 0; j < 3; ++j){
+         if(j == colorSource){
+            #ifdef SITERAND
+               dest[i].c[j].real = Hada_element(perm, Hperm);    
+               // dest[i].c[j].real = Hada_element(perm[i-th element], Hperm[m-th vector]);
+            #else
+               dest[i].c[j].real = Hada_element(perm[i], Hperm[j]);    
+            #endif
+         }else{
+            dest[i].c[j].real = 0;
+         }
+         dest[i].c[j].imag = 0;
+      }
    }
 } /* HPsource_plain_field */
 
