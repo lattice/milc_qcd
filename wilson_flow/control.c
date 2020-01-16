@@ -57,7 +57,7 @@ main( int argc, char **argv )
 
     /* Calculate and print initial flow output */
     fmunu_fmunu(&Et, &Es, &charge);
-    node0_printf("WFLOW %g %g %g %g\n", 0.0, Et, Es, charge);
+    node0_printf("WFLOW %g %.16g %.16g %.16g\n", 0.0, Et, Es, charge);
     fflush(stdout);
 
     /* Loop over the flow time */
@@ -70,7 +70,7 @@ main( int argc, char **argv )
 
       /* Calculate and print current flow output */
       fmunu_fmunu(&Et, &Es, &charge);
-      node0_printf("WFLOW %g %g %g %g\n", flowtime, Et, Es, charge);
+      node0_printf("WFLOW %g %.16g %.16g %.16g\n", flowtime, Et, Es, charge);
       fflush(stdout);
 
       /* Automatic determination of stoptime:                         */

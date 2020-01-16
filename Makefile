@@ -289,6 +289,7 @@ MACHINE_DEP_IO   = io_ansi.o # (io_ansi.o io_nonansi.o io_dcap.o)
 WANTQOP ?= # true # or blank. Implies HAVEQDP, HAVEQOP, HAVEQMP.
 
 WANTQIO ?= # true # or blank.  Implies HAVEQMP.
+#WANTQIO = true # true # or blank.  Implies HAVEQMP.
 
 WANTQMP ?= # true or blank.
 
@@ -302,10 +303,10 @@ SCIDAC = ${HOME}/scidac/install
 TAG=
 # Parallel versions
 QMPPAR ?= ${SCIDAC}/qmp${TAG}
-QIOPAR ?= $(SCIDAC)/qio${TAG}
+QIOPAR ?= ${SCIDAC}/qio
 # Single processor versions
 QMPSNG ?= ${SCIDAC}/qmp-single${TAG}
-QIOSNG ?= $(SCIDAC)/qio-single${TAG}
+QIOSNG ?= ${SCIDAC}/qio-single${TAG}
 QLA ?= ${SCIDAC}/qla${TAG}
 # Either version
 QDP ?= ${SCIDAC}/qdp${TAG}
@@ -320,6 +321,14 @@ QOP = ${QOPQDP}
 # CSCIDAC (List of compiler macros for SciDAC modules)
 
 include ../Make_template_scidac
+
+$(info $$QIOSNG is [${QIOSNG}])
+$(info $$QIOPAR is [${QIOPAR}])
+$(info $$WANTQIO is [${WANTQIO}])
+$(info $$QIOLIBDIR is [${QIOLIBDIR}])
+$(info $$QIOINCDIR is [${QIOINCDIR}])
+
+
 
 #----------------------------------------------------------------------
 # 12. Intel MKL for FFTW and LAPACK
