@@ -52,12 +52,12 @@ main( int argc, char **argv )
     dtimec = -dclock();
 
     /* Print flow output column labels */
-    node0_printf("#LABEL time Et Es charge\n");
+    node0_printf("#LABEL time        Et                Es             charge\n");
     fflush(stdout);
 
     /* Calculate and print initial flow output */
     fmunu_fmunu(&Et, &Es, &charge);
-    node0_printf("WFLOW %g %.16g %.16g %.16g\n", 0.0, Et, Es, charge);
+    node0_printf("WFLOW %.3g %.16g %.16g %.16g\n", 0.000, Et, Es, charge);
     fflush(stdout);
 
     /* Loop over the flow time */
