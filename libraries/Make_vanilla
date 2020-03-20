@@ -35,7 +35,7 @@ else ifeq ($(strip ${COMPILER}),gnu)
 else ifeq ($(strip ${COMPILER}),cray-intel)
   CC = icc
 else ifeq ($(strip ${COMPILER}),ibm)
-  CC = bgxlc_r
+  CC = xlc_r
 endif
 
 # Override
@@ -109,6 +109,13 @@ CODETYPE         = -DFAST # usually unchanged
 # 5. Choose archiver to match compiler for the QCDOC
 
 AR = ar
+
+#----------------------------------------------------------------------
+# 6. Check if we are using QUDA
+#----------------------------------------------------------------------
+ifeq ($(strip ${WANTQUDA}),true)
+  OCFLAGS += -DHAVE_QUDA
+endif
 
 #----------------------------------------------------------------------
 # End of user choices.  PLEASE, ALSO, CHECK include/config.h.
