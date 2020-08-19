@@ -365,14 +365,14 @@ void f_meas_imp_field( int npbp_reps, quark_invert_control *qic, Real mass,
         r_psi_bar_psi_even =  pbp_e.real*(2.0/(double)volume) ;
         i_psi_bar_psi_even =  pbp_e.imag*(2.0/(double)volume) ;
         r_ferm_action =  rfaction*(1.0/(double)volume) ;
-        node0_printf("PBP: mass %e     %e  %e  %e  %e ( %d of %d )\n", mass,
+        node0_printf("PBP: mass %e     %.17e  %.17e  %.17e  %.17e ( %d of %d )\n", mass,
             r_psi_bar_psi_even, r_psi_bar_psi_odd,
             i_psi_bar_psi_even, i_psi_bar_psi_odd,
             jpbp_reps+1, npbp_reps);
         //ASG: Print out tslice loop.
         for (int t = 0; t < nt; t++)
             {
-            node0_printf("PBP: mass %e     tslice %d %e  %e  %e  %e ( %d of %d )\n", mass, t,
+            node0_printf("PBP: mass %e     tslice %d %.17e  %.17e  %.17e  %.17e ( %d of %d )\n", mass, t,
                 (pbp_e_tslices + t)->real*(2.0/(double)volume), (pbp_o_tslices + t)->real*(2.0/(double)volume),
                 (pbp_e_tslices + t)->imag*(2.0/(double)volume), (pbp_o_tslices + t)->imag*(2.0/(double)volume),
                 jpbp_reps+1, npbp_reps);
