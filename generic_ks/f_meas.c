@@ -607,7 +607,7 @@ void f_meas_imp_multi( int n_masses, int npbp_reps, quark_invert_control *qic,
       r_psi_bar_psi_even =  pbp_e.real*(2.0/(double)volume) ;
       i_psi_bar_psi_even =  pbp_e.imag*(2.0/(double)volume) ;
       r_ferm_action =  rfaction*(1.0/(double)volume) ;
-      node0_printf("PBP: mass %e     %e  %e  %e  %e ( %d of %d )\n", mass[j],
+      node0_printf("PBP: mass %e     %.17e  %.17e  %.17e  %.17e ( %d of %d )\n", mass[j],
 		   r_psi_bar_psi_even, r_psi_bar_psi_odd,
 		   i_psi_bar_psi_even, i_psi_bar_psi_odd,
 		   jpbp_reps+1, npbp_reps);
