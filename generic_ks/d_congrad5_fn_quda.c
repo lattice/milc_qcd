@@ -180,6 +180,9 @@ int ks_congrad_block_parity_gpu(int nsrc, su3_vector **t_src, su3_vector **t_des
 				quark_invert_control *qic, Real mass,
 				imp_ferm_links_t *fn)
 {
+  if (this_node == 0) {
+    printf("CONGRAD5: using QUDA's block solver\n");
+  }
 #if 1
   /* Until QUDA's MRHS solver is fixed we fake it */
   int num_iters = 0;
