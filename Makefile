@@ -369,15 +369,16 @@ endif
 #----------------------------------------------------------------------
 # 12. FFTW3 Options
 
-WANTFFTW = true
+WANTFFTW ?= # true
 
 ifeq ($(strip ${WANTFFTW}),true)
   FFTW ?= ${HOME}/fftw/build-gcc
 
   FFTW_HEADERS = ${FFTW}/include
   INCFFTW = -I${FFTW_HEADERS}
-  LIBFFTW = -L${FFTW}/lib
-  LIBFFTW += -lfftw3 -lfftw3f
+
+  FFTW_LIBS ?= -lfftw3 -lfftw3f
+  LIBFFTW = -L${FFTW}/lib ${FFTW_LIBS}
   PACKAGE_HEADERS += ${FFTW_HEADERS}
 endif
 
